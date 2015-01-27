@@ -27,7 +27,6 @@
 		// using its id.
 		htmlCanvas = document.getElementById("ThisIsTheCanvas");
 		// Obtain a graphics context on the canvas element for drawing.
-		console.log(htmlCanvas);
 		context = htmlCanvas.getContext('2d');
 
         
@@ -48,15 +47,20 @@
 		// load our background image
 		img.src = 'graphics/tiledbackground.png'; // Set source path
 		img.addEventListener("load", function() {
+			// the next line can take a long time to finish...
 			context.drawImage(img, 0, 0)
+			// so we call the resize routine here - after it is guaranteed to be finished
+			console.log("The image has finished loading");
+			// NOW let's call the resize method
+			resizeCanvas();
 		}, false);
-		// draw our canvas
-		resizeCanvas();
+		
+		// originally was calling 'resizeCanvas()' HERE which was happening prior to the loading finishing...
 	}
 
 	// Runs each time the DOM window resize event fires.
-	// Resets the canvas dimensions to match window,
-	// then draws the new borders accordingly.
+	// Resets the canvas dimensions to match window
+
 	function resizeCanvas() {
 		htmlCanvas.width = window.innerWidth;
 		htmlCanvas.height = window.innerHeight;
@@ -64,20 +68,27 @@
 		var canvasHeight = window.innerHeight;
 		console.log("Canvas re-sized, new size: "+canvasWidth+" x "+canvasHeight);
         
+/* 		// old routine where canvas was just black
         console.log("Initializing the canvas to all black");
         context.clearRect(0, 0, canvasWidth, canvasHeight);
         context.globalAlpha = 1;
         context.fillStyle = '#000000';
         context.fillRect(0, 0,  canvasWidth, canvasHeight);
-        
-		// draw our stuff
+ */        
+        // new routine - attempts to re-draw the background image
+        console.log("Attempting to redraw the background image");
+		context.drawImage(img, 0, 0)
+
+		// draw our stuff (text)
+		console.log("calling redraw()");
         redraw();
 
 	}
 
 	
-	// Display custom canvas.
+	// Populates the text on our canvas
 	function redraw() {
+		console.log("in redraw");
 		// these numbers need to scale with the size of the canvas
 		var canvasWidth = window.innerWidth;
 		var canvasHeight = window.innerHeight;
@@ -111,11 +122,11 @@
 	function printAt(printAtX, printAtY, textToPrint) {
 		// a font and size
 		context.font = '20px _sans';
-		// a color - blue
+		// a color - yellow
 		context.fillStyle = '#FFFF00';
 		context.textBaseline = 'top';
-		// Print it
-		// console.log("Attempting to call fillText with:  "+textToPrint+", "+printAtX+", "+printAtY)
+		// Print it already!
+		console.log("Attempting to call fillText with:  "+textToPrint+", "+printAtX+", "+printAtY)
 		context.fillText(textToPrint, printAtX, printAtY);
 	}
 	</script>
@@ -125,7 +136,6 @@
 
       <body> 
            <canvas id="ThisIsTheCanvas" style = 'position: absolute; left: 0px; top: 0px;' >
-           <!-- <canvas id="ThisIsTheCanvas" width="1000" height="1000"> --> 
                Your browser does not support the HTML 5 Canvas. 
             </canvas>
          This Should Be Below The Canvas
