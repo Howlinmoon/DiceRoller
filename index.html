@@ -3,30 +3,85 @@
 <head>
 <meta charset="UTF-8" />
 <title>Dice Roller</title>
-
+	<style>
+		html, body {
+		// this style stuff is required for the full screen canvas
+			width: 100%;
+			height: 100%;
+			margin: 0px;
+			border: 0;
+			overflow: hidden; /*  Disable scrollbars */
+			display: block;  /* No floating content on sides */
+		}
+	</style>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 
 <script type="text/javascript">
 	// our globals
-    var context;
-    var text = "";
-    var xSize =800;
-    var ySize = 600;
-    var text2 = "";
-    var text3 = "";
-    var textXpos = 0;
-    var textYpos = 0;
+	var htmlCanvas, context;
+	var img = new Image();   // Create new img element
+	
+	$(function() {
+	    
+		// Obtain a reference to the canvas element
+		// using its id.
+		htmlCanvas = document.getElementById("ThisIsTheCanvas");
+		// Obtain a graphics context on the canvas element for drawing.
+		console.log(htmlCanvas);
+		context = htmlCanvas.getContext('2d');
 
-    // get the party started, by finding the context of our canvas	
-    $(function() {
-        context = document.getElementById("ThisIsTheCanvas").getContext("2d");
+        
+        console.log("Calling initialize");
+        initialize();
+
+    });  
+	
+    // Resizing code grabbed from:
+    	// http://htmlcheats.com/html/resize-the-html5-canvas-dyamically/
+    
+	function initialize() {
+		// Register an event listener to
+		// call the resizeCanvas() function each time 
+		// the window is resized.
+		window.addEventListener('resize', resizeCanvas, false);
+		
+		// load our background image
+		img.src = 'graphics/tiledbackground.png'; // Set source path
+		img.addEventListener("load", function() {
+			context.drawImage(img, 0, 0)
+		}, false);
+		// draw our canvas
+		resizeCanvas();
+	}
+
+	// Runs each time the DOM window resize event fires.
+	// Resets the canvas dimensions to match window,
+	// then draws the new borders accordingly.
+	function resizeCanvas() {
+		htmlCanvas.width = window.innerWidth;
+		htmlCanvas.height = window.innerHeight;
+		var canvasWidth = window.innerWidth;
+		var canvasHeight = window.innerHeight;
+		console.log("Canvas re-sized, new size: "+canvasWidth+" x "+canvasHeight);
         
         console.log("Initializing the canvas to all black");
-        context.clearRect(0, 0, xSize, ySize);
+        context.clearRect(0, 0, canvasWidth, canvasHeight);
         context.globalAlpha = 1;
         context.fillStyle = '#000000';
-        context.fillRect(0, 0, xSize, ySize);    
+        context.fillRect(0, 0,  canvasWidth, canvasHeight);
+        
+		// draw our stuff
+        redraw();
 
+	}
+
+	
+	// Display custom canvas.
+	function redraw() {
+		// these numbers need to scale with the size of the canvas
+		var canvasWidth = window.innerWidth;
+		var canvasHeight = window.innerHeight;
+		
 		// Print out our text on the canvas
         printAt(5, 100, "Enter Primary Dice Type: ");
 		// double space is 20x2
@@ -49,50 +104,30 @@
 		printAt(30,450,"The second die graphic goes about here");
 		
 		printAt(5, 550, "Click on button to roll dice");
-    });  
-	
 
-		function printAt(line, column, textToPrint) {
-			console.log("printAt called with line:" + line + ", column: "
-					+ column + ", textToPrint: " + textToPrint);
-			var metrics = context.measureText(textToPrint);
-			var textWidth = metrics.width;
-			// have to guess at the height
-			var textHeight = 20;
-			// a font and size
-			context.font = '20px _sans';
-			// a color - blue
-			context.fillStyle = '#0000FF';
-			context.textBaseline = 'top';
+	}
 
-			// We'll dynamically calculate the line and column positioning based on 
-			// the current canvas size
-			// assume 80x25 columns/lines
-			var columnWidth = context.canvas.width / 80;
-			var lineHeight = context.canvas.height / 25;
-
-			var printAtX = columnWidth * column;
-			var printAtY = lineHeight * line;
-			// Print it           
-			context.fillText(textToPrint, printAtX, printAtY);
-		}
+    
+	function printAt(printAtX, printAtY, textToPrint) {
+		// a font and size
+		context.font = '20px _sans';
+		// a color - blue
+		context.fillStyle = '#FFFF00';
+		context.textBaseline = 'top';
+		// Print it
+		// console.log("Attempting to call fillText with:  "+textToPrint+", "+printAtX+", "+printAtY)
+		context.fillText(textToPrint, printAtX, printAtY);
+	}
 	</script>
-
-
-
-
 
 
 </head>
 
-<body>
-	<div id="canvasdiv">
-		<canvas id="ThisIsTheCanvas" width="800" height="600">
-			<h1>Your browser does not appear to support HTML5.</h1>
-		</canvas>
-	</div>
-
-</body>
-
-
-</html>
+      <body> 
+           <canvas id="ThisIsTheCanvas" style = 'position: absolute; left: 0px; top: 0px;' >
+           <!-- <canvas id="ThisIsTheCanvas" width="1000" height="1000"> --> 
+               Your browser does not support the HTML 5 Canvas. 
+            </canvas>
+         This Should Be Below The Canvas
+      </body>
+   </html>
