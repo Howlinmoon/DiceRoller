@@ -94,9 +94,8 @@
 		var canvasHeight = window.innerHeight;
 		
 		// Print out our text on the canvas
-        printAt(5, 100, "Enter Primary Dice Type: ");
-		// double space is 20x2
-        printAt(5, 140, "Enter Primary Number of Rolls: ");
+        printAt(15, 60, "Enter Primary Dice Type : ");
+        printAt(15, 105, "Enter Primary Number of Rolls : ");
 		
 		// now the right side
 		printAt(320, 50, "Total of Primary rolls:");
@@ -104,9 +103,9 @@
 
 		printAt(30,250,"The first die graphic goes about here");
 		
-		printAt(5, 350,"Enter Secondary Dice Type:");
+		printAt(15, 390,"Enter Secondary Dice Type :");
 		// double space is 20x2
-		printAt(5, 390,"Enter Secondary Dice Type:");
+		printAt(15, 435,"Enter Number of Rolls :");
 
 		// now the right side
 		printAt(320, 340, "Total of Secondary rolls:");
@@ -121,7 +120,7 @@
     
 	function printAt(printAtX, printAtY, textToPrint) {
 		// a font and size
-		context.font = '20px _sans';
+		context.font = '25px _arial';
 		// a color - yellow
 		context.fillStyle = '#FFFF00';
 		context.textBaseline = 'top';

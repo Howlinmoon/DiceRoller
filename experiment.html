@@ -1,0 +1,246 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset=utf-8>
+	<title>Experimenting with Images</title>
+	<style>
+		body { margin: 40px; background: #666; }
+		#my_canvas { background: #fff; border: #000 1px solid;}
+	</style>
+	
+	<script>
+	
+	var dieImage = new Array();
+	var dieVelocity = new Array();
+	var dieX = new Array();
+	var dieY = new Array();
+	var dieXd = new Array();
+	var dieYd = new Array();
+	
+	dieImage[1] = new Image();
+	dieImage[1].src = "graphics/d4-sheet0.png";
+
+	dieImage[2] = new Image();
+	dieImage[2].src = "graphics/d6-sheet0.png";
+	
+	dieImage[3] = new Image();
+	dieImage[3].src = "graphics/d8-sheet0.png";
+	
+	dieImage[4] = new Image();
+	dieImage[4].src = "graphics/d10-sheet0.png";
+	
+	dieImage[5] = new Image();
+	dieImage[5].src = "graphics/d12-sheet0.png";
+	
+	dieImage[6] = new Image();
+	dieImage[6].src = "graphics/d20-sheet0.png";
+	
+	dieImage[7] = new Image();
+	dieImage[7].src = "graphics/d100-sheet0.png";
+	
+	var enemyTank = new Image();
+	enemyTank.src = "graphics/ETankBottom/Default/000.png";
+	
+	var enemyTankGun = new Image();
+	enemyTankGun.src = "graphics/ETankTop/Default/000.png";
+	
+	var tankTread = new Image();
+	tankTread.src = "graphics/TankTread/Default/000.png";
+	
+	var backgroundImage = new Image();
+	backgroundImage.src = "graphics/tiledbackground.png";
+	
+	var TO_RADIANS = Math.PI/180; 
+     var angle = 0;
+     var ctx = 0;
+     
+     var eTankX = 500;
+     var eTankY = 500;
+     var eTankDir = 3;
+     
+     
+   
+
+	function draw() {
+		ctx = document.getElementById('my_canvas').getContext('2d');
+		console.log(ctx.canvas.id+" | "+ctx.canvas.width+" | "+ctx.canvas.height);
+		
+		// randomize initial starting velocities for the dies from 3 to 10
+		// randomNumber(3, 10);
+		// and set their initial dieX and dieY;
+		for (dieNumber = 1; dieNumber <= 7; dieNumber++) {
+			dieVelocity[dieNumber] = randomNumber(3,10) * 4;
+			// set our starting deltas to our velocity (down and right)
+			dieXd[dieNumber] = dieVelocity[dieNumber]
+			dieYd[dieNumber] = dieVelocity[dieNumber]
+			if (dieNumber < 5) {
+				dieY[dieNumber] = 50;
+				dieX[dieNumber] = 100 * dieNumber;
+			} else {
+				dieY[dieNumber] = 150;
+				dieX[dieNumber] = 100 * ( dieNumber - 5);
+			}
+		}
+        setInterval("animate()", 100);
+	
+	}
+	
+	function animate() {
+		// Draw the background
+	    var ptrn = ctx.createPattern(backgroundImage, 'repeat'); // Create a pattern with this image, and set it to "repeat".
+		// save the state of the context
+	    ctx.save(); 
+	    ctx.fillStyle = ptrn;
+	    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height); // context.fillRect(x, y, width, height);
+	    // restore the state
+	    ctx.restore();
+		
+		
+		// increment our global angle
+		angle += 10;
+		if (angle > 360) {
+			angle = 0;
+		}
+
+		// Draw the moving dice
+		for (dieNumber = 1; dieNumber <= 7; dieNumber++ ) {
+			
+			// adjust our X,Y
+			dieX[dieNumber] += dieXd[dieNumber];
+			if (dieX[dieNumber] > ctx.canvas.width || dieX[dieNumber] < 0 ) {
+				// X bounce
+				dieXd[dieNumber] = -dieXd[dieNumber];
+			}
+
+			dieY[dieNumber] += dieYd[dieNumber];
+			if (dieY[dieNumber] > ctx.canvas.height || dieY[dieNumber] < 0 ) {
+				// Y bounce
+				dieYd[dieNumber] = -dieYd[dieNumber];
+			}
+			
+			// Draw the current image
+			drawRotatedImage(dieImage[dieNumber], dieX[dieNumber], dieY[dieNumber], angle, ctx);
+		}
+		
+		// Draw the enemy tank
+//		console.log("eTankDir: "+eTankDir);
+//		console.log("eTankX: "+eTankX);
+//		console.log("eTankY: "+eTankY);
+		var gunXd = 0;
+		var gunYd = 0;
+		
+		switch (eTankDir) {
+		case 1:
+			eTankX += 5;
+			gunXd = 10;
+			gunYd = 12;
+			if (eTankX > (ctx.canvas.width - 50 ) ) {
+				eTankDir = 2;
+			}
+			break;
+
+		case 2:
+			gunXd = 0;
+			gunYd = 10;
+			eTankY -= 5;
+			if (eTankY < 50 ) {
+				eTankDir = 3;
+			}
+			break;
+
+		case 3:
+			gunXd = 16;
+			gunYd = 4;
+			eTankX -= 5;
+			if (eTankX < 50 ) {
+				eTankDir = 4;
+			}
+			break;
+
+		case 4:
+			gunXd = 12;
+			gunYd = 4;
+			eTankY += 5;
+			if (eTankY > (ctx.canvas.height - 50 ) ) {
+				eTankDir = 1;
+			}
+			break;
+
+		}
+		
+		console.log("eTankDir: "+eTankDir);
+		console.log("gunXd: "+gunXd);
+		console.log("gunYd: "+gunYd);
+
+		drawRotatedImage(enemyTank, eTankX, eTankY, (eTankDir - 1) * 90, ctx);
+		// and the gun - always point it at the center of the map
+		// var angleDeg = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
+		var centerX = ctx.canvas.width / 2;
+		var centerY = ctx.canvas.height / 2;
+		var gunAngle =  Math.atan2(centerY - eTankY+gunYd, centerX - eTankX+gunXd) * 180 / Math.PI;
+		drawRotatedImage(enemyTankGun, eTankX +gunXd, eTankY+gunYd, gunAngle, ctx);
+		
+		// direction 1
+		drawRotatedImage(enemyTank, 200, 200, 0 * 90, ctx);
+		drawRotatedImage(enemyTankGun, 200 + 20, 200, 0 * 90, ctx);
+
+		// direction 2
+		drawRotatedImage(enemyTank, 300, 200, 1 * 90, ctx);
+		drawRotatedImage(enemyTankGun, 300 , 200 + 10, 1 * 90, ctx);
+
+		// direction 3
+		drawRotatedImage(enemyTank, 400, 200, 2 * 90, ctx);
+		drawRotatedImage(enemyTankGun, 400 - 20, 200, 2 * 90, ctx);
+
+		// direction 4
+		drawRotatedImage(enemyTank, 500, 200, 3 * 90, ctx);
+		drawRotatedImage(enemyTankGun, 500 , 200 - 10, 3 * 90, ctx);
+
+		
+	}
+	
+	window.onload = draw;
+	
+	function drawRotatedImage(image, x, y, angle, ctx) { 
+	 
+		// save the current co-ordinate system 
+		// before we screw with it
+		ctx.save(); 
+	 
+		// move to the middle of where we want to draw our image
+		ctx.translate(x, y);
+	 
+		// rotate around that point, converting our 
+		// angle from degrees to radians 
+		ctx.rotate(angle * TO_RADIANS);
+	 
+		// draw it up and to the left by half the width
+		// and height of the image 
+		ctx.drawImage(image, -(image.width/2), -(image.height/2));
+	 
+		// and restore the co-ords to how they were when we began
+		ctx.restore(); 
+	}
+	
+	function randomNumber( min, max ) {
+		return Math.floor(Math.random() * (max - min)) + min;
+	}
+
+	
+	</script>
+	
+</head>
+
+<body>
+<!-- 
+<script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
+-->
+<script>
+
+</script>
+
+<canvas id="my_canvas" width="1280" height = "1024"></canvas>
+
+
+</body>
+</html>
