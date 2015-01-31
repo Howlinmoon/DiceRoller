@@ -119,7 +119,7 @@
 			}
 			
 			// Draw the current image
-			drawRotatedImage(dieImage[dieNumber], dieX[dieNumber], dieY[dieNumber], angle, ctx);
+			// drawRotatedImage(dieImage[dieNumber], dieX[dieNumber], dieY[dieNumber], angle, ctx);
 		}
 		
 		// Draw the enemy tank
@@ -168,9 +168,7 @@
 
 		}
 		
-		console.log("eTankDir: "+eTankDir);
-		console.log("gunXd: "+gunXd);
-		console.log("gunYd: "+gunYd);
+		console.log("gun width: "+enemyTankGun.width+", height: "+enemyTankGun.height);
 
 		drawRotatedImage(enemyTank, eTankX, eTankY, (eTankDir - 1) * 90, ctx);
 		// and the gun - always point it at the center of the map
@@ -178,45 +176,24 @@
 		var centerX = ctx.canvas.width / 2;
 		var centerY = ctx.canvas.height / 2;
 		var gunAngle =  Math.atan2(centerY - eTankY+gunYd, centerX - eTankX+gunXd) * 180 / Math.PI;
-		drawRotatedImage(enemyTankGun, eTankX +gunXd, eTankY+gunYd, gunAngle, ctx);
+
+//		drawRotatedImage(enemyTankGun, eTankX +gunXd, eTankY+gunYd, gunAngle, ctx);
+		ctx.save();
+		ctx.translate(eTankX,  eTankY);
+		ctx.rotate(gunAngle * Math.PI/180);
+		ctx.drawImage(enemyTankGun, -20, -22);
+		ctx.restore();
 		
-		// direction 1
-		drawRotatedImage(enemyTank, 200, 200, 0 * 90, ctx);
-		drawRotatedImage(enemyTankGun, 200 + 20, 200, 0, ctx);
 
-		// direction 2
-		drawRotatedImage(enemyTank, 300, 200, 0 * 90, ctx);
-		drawRotatedImage(enemyTankGun, 300+12 , 200 + 14, 45, ctx);
+		drawRotatedImage(enemyTank,136, 121, 0 * 90, ctx);
+		var deg = angle;
+		ctx.save();
+		ctx.translate(136, 121);
+		ctx.rotate(deg * Math.PI/180);
+		ctx.drawImage(enemyTankGun, -20, -22);
+		ctx.restore();
 
-		// direction 3
-		drawRotatedImage(enemyTank, 400, 200, 0 * 90, ctx);
-		drawRotatedImage(enemyTankGun, 400 + 2, 200+16, 90, ctx);
-
-		// direction 4
-		drawRotatedImage(enemyTank, 500, 200, 0 * 90, ctx);
-		drawRotatedImage(enemyTankGun, 500 - 12 , 200 + 14, 135, ctx);
-
-		// direction 1
-		drawRotatedImage(enemyTank, 600, 200, 0 * 90, ctx);
-		drawRotatedImage(enemyTankGun, 600 + 20, 200,  180, ctx);
-
-		// direction 2
-		drawRotatedImage(enemyTank, 700, 200, 0 * 90, ctx);
-		drawRotatedImage(enemyTankGun, 700 , 200 + 20, 225, ctx);
-
-		// direction 3
-		drawRotatedImage(enemyTank, 800, 200, 0 * 90, ctx);
-		drawRotatedImage(enemyTankGun, 800 - 20, 200, 270, ctx);
-
-		// direction 4
-		drawRotatedImage(enemyTank, 900, 200, 0 * 90, ctx);
-		drawRotatedImage(enemyTankGun, 900 , 200 - 20, 315, ctx);
-		
-		// direction 4
-		drawRotatedImage(enemyTank, 1000, 200, 0 * 90, ctx);
-		drawRotatedImage(enemyTankGun, 1000 , 200, angle, ctx);
-		
-		
+      	
 	}
 	
 	window.onload = draw;
