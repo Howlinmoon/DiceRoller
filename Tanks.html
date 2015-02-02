@@ -21,14 +21,17 @@
 	var playerTankGun = new Image();
 	playerTankGun.src = "graphics/ETankTop/Default/000.png";
 
+    // declare an array to hold a bunch of enemy tank objects
+    var enemyTanks = [];
+
 	
-	// This class is for all entities that drive around the map
+	// This class is for all entities that move around the map
 	function VehicleClass () {
 		// Vehicles have these common properties:
-		// X location, Y location,  Direction (heading), damage (health)
+		// X location, Y location,  Direction (heading), Velocity, damage (health)
 		// a graphic image
 		// and an Id?
-		this.x = 0, this.y = 0, this.heading = 0, this.health = 100, this.id = 0;
+		this.x = 0, this.y = 0, this.heading = 0, this.health = 100, this.id = 0, this.velocity = 0;
 		this.vehicleImage = new Image();
 	}
 	
@@ -43,29 +46,39 @@
 		// target acquired true/false
 		this.turretDir = 0, this.gunAmmo = 100, this.mines = 10, this.targetX = 0, this.targetY = 0, this.targetAcquired = false;
 		this.tankMethod = function tankMethod(arg1) {
-			return arg1 + "Tank Method reporting for duty - ID: "+this.id;
+			return arg1 + " Tank Method reporting for duty - ID: "+this.id;
 		}
 	}
 
 	// Establish a class for enemy tanks
-	function EnemyTanks() {
-		this.vehicleImage = enemyTankBase;
-		this.child_property1 = "Adios";
-		this.childmethod1 = function childmethod1(arg1) {
-			return arg1 + "Child method 1 return data ...";
+	function EnemyTankClass(arg1) {
+		// enemy tanks require these additional properties:
+		// a graphic image, a behavior
+		this.vehicleImage = enemyTankBase, this.behavior = "aggressive";
+		this.enemyTankMethod = function enemyTankMethod(arg1) {
+			return arg1 + "Enemy Tank Method reporting for duty - ID: "+this.id;
 		}
+		// assign the passed Id to the tank
+		this.id = arg1;
 	}
 
 	// Make the child class inherit all of the parent class characteristics
 	// by using the prototype property
 
-	Childclass.prototype = new Parentclass();
-	var instance1 = new Childclass();
+	// First, we make the tank class inherit the base vehicle class
+	TankClass.prototype = new VehicleClass();
 
-	console.log("instance1 - checking for parent_property1: "+instance1.parent_property1);
-	console.log("instance1 - checking for child_property1: "+instance1.child_property1);
-	console.log("instance1 - calling parentmethod1 with 'cat'"+instance1.parentmethod1('cat'));
-	console.log("instance1 - calling childmethod1 with 'dog'"+instance1.childmethod1('dog'));
+	// Next, we make the enemy tank class inherit the base tank class
+	EnemyTankClass.prototype = new TankClass;
+
+	// At this point, the following should create a new enemy tank object:
+	var enemyTank1 = new EnemyTankClass('666');
+
+	// Attempt to verify the classes are working correctly
+	console.log("enemyTank1 - checking EnemyTankClass behavior property: "+enemyTank1.behavior);
+	console.log("enemyTank1 - calling the EnemyTankClass enemyTankMethod: "+enemyTank1.enemyTankMethod(' sample data '));
+	console.log("enemyTank1 - Displaying how many mines are available: "+enemyTank1.mines);
+	console.log("enemyTank1 - calling tankMethod with argument '999' "+enemyTank1.tankMethod('999'));
 
 	
 	
@@ -96,6 +109,26 @@
 		ctx = document.getElementById('my_canvas').getContext('2d');
 		console.log(ctx.canvas.id+" | "+ctx.canvas.width+" | "+ctx.canvas.height);
 		
+		// create a bunch of enemy tanks
+		for (var tankCounter = 1; tankCounter <= 50; tankCounter ++ ) {
+			// Spawn a new enemy tank, and assign it's id
+			var newEnemyTankObject = new EnemyTankClass(tankCounter);
+			// assign initial X and Y co-ords
+			// randomize them anywhere on the canvas - minus a 100 pix border
+			newEnemyTankObject.x = Math.floor(Math.random() * (ctx.canvas.width - 100)) + 1;
+			newEnemyTankObject.y = Math.floor(Math.random() * (ctx.canvas.height - 100)) + 1;
+			// randomize a heading (1 - 4)
+			newEnemyTankObject.heading = Math.floor(Math.random() * 4) + 1;
+
+			// add this new tank to our array
+			enemyTanks.push(newEnemyTankObject);
+			console.log("Added tank "+tankCounter+" added to the array");
+		}
+		
+		// how many enemy tanks in the array?
+		console.log("Size of enemy tank array: "+enemyTanks.length);
+		
+		
         setInterval("animate()", 100);
 	
 	}
@@ -118,69 +151,64 @@
 		}
 
 		
-		// Draw the enemy tank
+		// Draw the enemy tanks
 //		console.log("eTankDir: "+eTankDir);
 //		console.log("eTankX: "+eTankX);
 //		console.log("eTankY: "+eTankY);
-		var gunXd = 0;
-		var gunYd = 0;
 		
-		switch (eTankDir) {
-		case 1:
-			eTankX += 5;
-			gunXd = 10;
-			gunYd = 12;
-			if (eTankX > (ctx.canvas.width - 50 ) ) {
-				eTankDir = 2;
+		for (var tankNumber = 1; tankNumber < enemyTanks.length; tankNumber++ ) {
+			//console.log("Tank number: "+tankNumber+", current heading: "+enemyTanks[tankNumber].heading);
+			switch (enemyTanks[tankNumber].heading) {
+			case 1:
+				enemyTanks[tankNumber].x += 5;
+				if (enemyTanks[tankNumber].x > (ctx.canvas.width - 50 ) ) {
+					enemyTanks[tankNumber].heading = 2;
+				}
+				break;
+	
+			case 2:
+				enemyTanks[tankNumber].y -= 5;
+				if (enemyTanks[tankNumber].y < 50 ) {
+					enemyTanks[tankNumber].heading = 3;
+				}
+				break;
+	
+			case 3:
+				enemyTanks[tankNumber].x -= 5;
+				if (enemyTanks[tankNumber].x < 50 ) {
+					enemyTanks[tankNumber].heading = 4;
+				}
+				break;
+	
+			case 4:
+				enemyTanks[tankNumber].y += 5;
+				if (enemyTanks[tankNumber].y > (ctx.canvas.height - 50 ) ) {
+					enemyTanks[tankNumber].heading = 1;
+				}
+				break;
+	
 			}
-			break;
-
-		case 2:
-			gunXd = 0;
-			gunYd = 10;
-			eTankY -= 5;
-			if (eTankY < 50 ) {
-				eTankDir = 3;
-			}
-			break;
-
-		case 3:
-			gunXd = 16;
-			gunYd = 4;
-			eTankX -= 5;
-			if (eTankX < 50 ) {
-				eTankDir = 4;
-			}
-			break;
-
-		case 4:
-			gunXd = 12;
-			gunYd = 4;
-			eTankY += 5;
-			if (eTankY > (ctx.canvas.height - 50 ) ) {
-				eTankDir = 1;
-			}
-			break;
+			
+			//console.log("gun width: "+enemyTankGun.width+", height: "+enemyTankGun.height);
+			// gun width: 72, height: 42
+			
+			drawRotatedImage(enemyTanks[tankNumber].vehicleImage, enemyTanks[tankNumber].x, enemyTanks[tankNumber].y, (enemyTanks[tankNumber].heading - 1) * 90, ctx);
+			// and the gun - always point it at the center of the map
+			// var angleDeg = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
+			var centerX = ctx.canvas.width / 2;
+			var centerY = ctx.canvas.height / 2;
+			var gunAngle =  Math.atan2(centerY - enemyTanks[tankNumber].y, centerX - enemyTanks[tankNumber].x) * 180 / Math.PI;
+	
+	//		drawRotatedImage(enemyTankGun, eTankX +gunXd, eTankY+gunYd, gunAngle, ctx);
+			ctx.save();
+			ctx.translate(enemyTanks[tankNumber].x,  enemyTanks[tankNumber].y);
+			ctx.rotate(gunAngle * Math.PI/180);
+			ctx.drawImage(enemyTankGun, -20, -22);
+			ctx.restore();
 
 		}
 		
-		console.log("gun width: "+enemyTankGun.width+", height: "+enemyTankGun.height);
-
-		drawRotatedImage(enemyTank, eTankX, eTankY, (eTankDir - 1) * 90, ctx);
-		// and the gun - always point it at the center of the map
-		// var angleDeg = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
-		var centerX = ctx.canvas.width / 2;
-		var centerY = ctx.canvas.height / 2;
-		var gunAngle =  Math.atan2(centerY - eTankY+gunYd, centerX - eTankX+gunXd) * 180 / Math.PI;
-
-//		drawRotatedImage(enemyTankGun, eTankX +gunXd, eTankY+gunYd, gunAngle, ctx);
-		ctx.save();
-		ctx.translate(eTankX,  eTankY);
-		ctx.rotate(gunAngle * Math.PI/180);
-		ctx.drawImage(enemyTankGun, -20, -22);
-		ctx.restore();
-		
-
+/*
 		drawRotatedImage(enemyTank,136, 121, 0 * 90, ctx);
 		var deg = angle;
 		ctx.save();
@@ -188,7 +216,7 @@
 		ctx.rotate(deg * Math.PI/180);
 		ctx.drawImage(enemyTankGun, -20, -22);
 		ctx.restore();
-
+*/
       	
 	}
 	
