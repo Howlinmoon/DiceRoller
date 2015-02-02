@@ -1,0 +1,242 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset=utf-8>
+	<title>Tanks</title>
+	<style>
+		body { margin: 40px; background: #666; }
+		#my_canvas { background: #fff; border: #000 1px solid;}
+	</style>
+	
+	<script>
+	
+	
+	var enemyTankBase = new Image();
+	enemyTankBase.src = "graphics/ETankBottom/Default/000.png";
+	var enemyTankGun = new Image();
+	enemyTankGun.src = "graphics/ETankTop/Default/000.png";
+	
+	var playerTankBase = new Image();
+	playerTankBase.src = "graphics/TankBottom/Default/000.png";
+	var playerTankGun = new Image();
+	playerTankGun.src = "graphics/ETankTop/Default/000.png";
+
+	
+	// This class is for all entities that drive around the map
+	function VehicleClass () {
+		// Vehicles have these common properties:
+		// X location, Y location,  Direction (heading), damage (health)
+		// a graphic image
+		// and an Id?
+		this.x = 0, this.y = 0, this.heading = 0, this.health = 100, this.id = 0;
+		this.vehicleImage = new Image();
+	}
+	
+
+	// establish a class for the Tanks
+
+	function TankClass() {
+		// the tanks require these additional properties:
+		// direction of  turret
+		// gun ammo,  mine ammo
+		// current target X,Y
+		// target acquired true/false
+		this.turretDir = 0, this.gunAmmo = 100, this.mines = 10, this.targetX = 0, this.targetY = 0, this.targetAcquired = false;
+		this.tankMethod = function tankMethod(arg1) {
+			return arg1 + "Tank Method reporting for duty - ID: "+this.id;
+		}
+	}
+
+	// Establish a class for enemy tanks
+	function EnemyTanks() {
+		this.vehicleImage = enemyTankBase;
+		this.child_property1 = "Adios";
+		this.childmethod1 = function childmethod1(arg1) {
+			return arg1 + "Child method 1 return data ...";
+		}
+	}
+
+	// Make the child class inherit all of the parent class characteristics
+	// by using the prototype property
+
+	Childclass.prototype = new Parentclass();
+	var instance1 = new Childclass();
+
+	console.log("instance1 - checking for parent_property1: "+instance1.parent_property1);
+	console.log("instance1 - checking for child_property1: "+instance1.child_property1);
+	console.log("instance1 - calling parentmethod1 with 'cat'"+instance1.parentmethod1('cat'));
+	console.log("instance1 - calling childmethod1 with 'dog'"+instance1.childmethod1('dog'));
+
+	
+	
+	var enemyTank = new Image();
+	enemyTank.src = "graphics/ETankBottom/Default/000.png";
+	
+	var enemyTankGun = new Image();
+	enemyTankGun.src = "graphics/ETankTop/Default/000.png";
+	
+	var tankTread = new Image();
+	tankTread.src = "graphics/TankTread/Default/000.png";
+	
+	var backgroundImage = new Image();
+	backgroundImage.src = "graphics/tiledbackground.png";
+	
+	var TO_RADIANS = Math.PI/180; 
+     var angle = 0;
+     var ctx = 0;
+     
+     var eTankX = 500;
+     var eTankY = 500;
+     var eTankDir = 3;
+     
+     
+   
+
+	function InitGame() {
+		ctx = document.getElementById('my_canvas').getContext('2d');
+		console.log(ctx.canvas.id+" | "+ctx.canvas.width+" | "+ctx.canvas.height);
+		
+        setInterval("animate()", 100);
+	
+	}
+	
+	function animate() {
+		// Draw the background
+	    var ptrn = ctx.createPattern(backgroundImage, 'repeat'); // Create a pattern with this image, and set it to "repeat".
+		// save the state of the context
+	    ctx.save(); 
+	    ctx.fillStyle = ptrn;
+	    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height); // context.fillRect(x, y, width, height);
+	    // restore the state
+	    ctx.restore();
+		
+		
+		// increment our global angle
+		angle += 10;
+		if (angle > 360) {
+			angle = 0;
+		}
+
+		
+		// Draw the enemy tank
+//		console.log("eTankDir: "+eTankDir);
+//		console.log("eTankX: "+eTankX);
+//		console.log("eTankY: "+eTankY);
+		var gunXd = 0;
+		var gunYd = 0;
+		
+		switch (eTankDir) {
+		case 1:
+			eTankX += 5;
+			gunXd = 10;
+			gunYd = 12;
+			if (eTankX > (ctx.canvas.width - 50 ) ) {
+				eTankDir = 2;
+			}
+			break;
+
+		case 2:
+			gunXd = 0;
+			gunYd = 10;
+			eTankY -= 5;
+			if (eTankY < 50 ) {
+				eTankDir = 3;
+			}
+			break;
+
+		case 3:
+			gunXd = 16;
+			gunYd = 4;
+			eTankX -= 5;
+			if (eTankX < 50 ) {
+				eTankDir = 4;
+			}
+			break;
+
+		case 4:
+			gunXd = 12;
+			gunYd = 4;
+			eTankY += 5;
+			if (eTankY > (ctx.canvas.height - 50 ) ) {
+				eTankDir = 1;
+			}
+			break;
+
+		}
+		
+		console.log("gun width: "+enemyTankGun.width+", height: "+enemyTankGun.height);
+
+		drawRotatedImage(enemyTank, eTankX, eTankY, (eTankDir - 1) * 90, ctx);
+		// and the gun - always point it at the center of the map
+		// var angleDeg = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
+		var centerX = ctx.canvas.width / 2;
+		var centerY = ctx.canvas.height / 2;
+		var gunAngle =  Math.atan2(centerY - eTankY+gunYd, centerX - eTankX+gunXd) * 180 / Math.PI;
+
+//		drawRotatedImage(enemyTankGun, eTankX +gunXd, eTankY+gunYd, gunAngle, ctx);
+		ctx.save();
+		ctx.translate(eTankX,  eTankY);
+		ctx.rotate(gunAngle * Math.PI/180);
+		ctx.drawImage(enemyTankGun, -20, -22);
+		ctx.restore();
+		
+
+		drawRotatedImage(enemyTank,136, 121, 0 * 90, ctx);
+		var deg = angle;
+		ctx.save();
+		ctx.translate(136, 121);
+		ctx.rotate(deg * Math.PI/180);
+		ctx.drawImage(enemyTankGun, -20, -22);
+		ctx.restore();
+
+      	
+	}
+	
+	
+	function drawRotatedImage(image, x, y, angle, ctx) { 
+	 
+		// save the current co-ordinate system 
+		// before we screw with it
+		ctx.save(); 
+	 
+		// move to the middle of where we want to draw our image
+		ctx.translate(x, y);
+	 
+		// rotate around that point, converting our 
+		// angle from degrees to radians 
+		ctx.rotate(angle * TO_RADIANS);
+	 
+		// draw it up and to the left by half the width
+		// and height of the image 
+		ctx.drawImage(image, -(image.width/2), -(image.height/2));
+	 
+		// and restore the co-ords to how they were when we began
+		ctx.restore(); 
+	}
+	
+	function randomNumber( min, max ) {
+		return Math.floor(Math.random() * (max - min)) + min;
+	}
+
+	window.addEventListener('load', function(event) {
+		InitGame();
+	});
+
+	</script>
+	
+</head>
+
+<body>
+<!-- 
+<script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
+-->
+<script>
+
+</script>
+
+<canvas id="my_canvas" width="1280" height = "1024"></canvas>
+
+
+</body>
+</html>
+
