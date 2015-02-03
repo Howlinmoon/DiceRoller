@@ -220,6 +220,22 @@ body {
 				}
 			}
 			
+			// check to make sure we will not collide with the target tank
+			if ( enemyTanks[tankNumber].x,
+					enemyTanks[tankNumber].y,
+					enemyTanks[tankNumber].heading,
+					enemyTanks[tankNumber].velocity,
+					playerTank.x,
+					playerTank.y,
+					playerTank.heading,
+					playerTank.velocity) {
+				console.log("Tank "+tankNumber+" will collide with Player Tank if it continues - stopping");
+				enemyTanks[tankNumber].velocity = 0;
+			} else {
+				console.log("Tank "+tankNumber+" will NOT collide with Player Tank");
+			}
+			
+			
 			// go ahead and move if you can
 			if (enemyTanks[tankNumber].velocity != 0) {
 				enemyTanks[tankNumber].x = enemyTanks[tankNumber].x += Math.cos(enemyTanks[tankNumber].heading * TO_RADIANS) * enemyTanks[tankNumber].velocity;
