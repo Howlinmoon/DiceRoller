@@ -1,0 +1,55 @@
+<!doctype html>
+
+<html>
+<head>
+	<title>Collision Tester</title>
+	<script src="CollisionAvoidance.js"></script>
+</head>
+
+<body>
+	Collision Avoidance Test
+	<script>
+
+	var ctx = 0;
+
+	
+	function InitGame() {
+		
+		ctx = document.getElementById('my_canvas').getContext('2d');
+//		ctx.fillStyle = "black";
+//		ctx.fillRect(0, 0, 1280, 1024);
+
+		// 0 = right
+		// 90 = up
+		// 180 = left
+		// 270 = down
+		
+		// a simple test:
+		var x1 = 10;
+		var y1 = 20;
+		var dir1 = 0;
+		var velo1 = 20;
+	
+		var x2 = 15;
+		var y2 = 10;
+		var dir2 = 90;
+		var velo2 = 20;
+	
+		if (willCollide (x1, y1, dir1, velo1, x2, y2, dir2, velo2)) {
+			console.log("These objects will collide");
+		} else {
+			console.log("These objects will not collide");
+		}
+	}
+	
+	window.addEventListener('load', function(event) {
+		InitGame();
+	});
+
+	</script>
+	
+		<canvas id="my_canvas" width="1280" height="1024"></canvas>
+	
+</body>
+
+</html>

@@ -15,6 +15,8 @@ body {
 }
 </style>
 
+<script src = "CollisionAvoidance.js"></script>
+
 <script>
 	var enemyTankBase = new Image();
 	enemyTankBase.src = "graphics/ETankBottom/Default/000.png";
@@ -24,10 +26,19 @@ body {
 	var playerTankBase = new Image();
 	playerTankBase.src = "graphics/TankBottom/Default/000.png";
 	var playerTankGun = new Image();
-	playerTankGun.src = "graphics/ETankTop/Default/000.png";
+	playerTankGun.src = "graphics/TankTop/Default/000.png";
 
+	var backgroundImage = new Image();
+	backgroundImage.src = "graphics/tiledbackground.png";
+
+	var TO_RADIANS = Math.PI / 180;
+
+	
 	// declare an array to hold a bunch of enemy tank objects
 	var enemyTanks = [];
+	
+	// make our player tank global also
+	var playerTank;
 
 	// This class is for all entities that move around the map
 	function VehicleClass() {
@@ -50,6 +61,7 @@ body {
 		// target acquired true/false
 		this.turretDir = 0, this.gunAmmo = 100, this.mines = 10,
 				this.targetX = 0, this.targetY = 0, this.targetAcquired = false;
+		this.gunRange = 150, this.scanRange = 200;
 		this.tankMethod = function tankMethod(arg1) {
 			return arg1 + " Tank Method reporting for duty - ID: " + this.id;
 		}
@@ -59,7 +71,7 @@ body {
 	function EnemyTankClass(arg1) {
 		// enemy tanks require these additional properties:
 		// a graphic image, a behavior
-		this.vehicleImage = enemyTankBase, this.behavior = "aggressive";
+		this.vehicleImage = enemyTankBase, this.behavior = "wallFollow";
 		this.enemyTankMethod = function enemyTankMethod(arg1) {
 			return arg1 + "Enemy Tank Method reporting for duty - ID: "
 					+ this.id;
@@ -68,6 +80,21 @@ body {
 		this.id = arg1;
 	}
 
+	// Establish a class for player tanks
+	function PlayerTankClass(arg1) {
+		// player tanks require these additional properties:
+		// a graphic image
+		this.vehicleImage = playerTankBase
+		this.playerTankMethod = function playerTankMethod(arg1) {
+			return arg1 + "Player Tank Method reporting for duty - ID: "
+					+ this.id;
+		}
+		// assign the passed Id to the tank
+		this.id = arg1;
+	}
+
+	
+	
 	// Make the child class inherit all of the parent class characteristics
 	// by using the prototype property
 
@@ -90,27 +117,8 @@ body {
 	console.log("enemyTank1 - calling tankMethod with argument '999' "
 			+ enemyTank1.tankMethod('999'));
 
-	/*	
-	 var enemyTank = new Image();
-	 enemyTank.src = "graphics/ETankBottom/Default/000.png";
-	
-	 var enemyTankGun = new Image();
-	 enemyTankGun.src = "graphics/ETankTop/Default/000.png";
-	
-	 var tankTread = new Image();
-	 tankTread.src = "graphics/TankTread/Default/000.png";
-	 */
-
-	var backgroundImage = new Image();
-	backgroundImage.src = "graphics/tiledbackground.png";
-
-	var TO_RADIANS = Math.PI / 180;
 	var angle = 0;
 	var ctx = 0;
-
-	var eTankX = 500;
-	var eTankY = 500;
-	var eTankDir = 3;
 
 	function InitGame() {
 		ctx = document.getElementById('my_canvas').getContext('2d');
@@ -118,7 +126,7 @@ body {
 				+ ctx.canvas.height);
 
 		// create a bunch of enemy tanks
-		for (var tankCounter = 1; tankCounter <= 50; tankCounter++) {
+		for (var tankCounter = 1; tankCounter <= 5; tankCounter++) {
 			// Spawn a new enemy tank, and assign it's id
 			var newEnemyTankObject = new EnemyTankClass(tankCounter);
 			// assign initial X and Y co-ords
@@ -127,13 +135,27 @@ body {
 					* (ctx.canvas.width - 100)) + 1;
 			newEnemyTankObject.y = Math.floor(Math.random()
 					* (ctx.canvas.height - 100)) + 1;
-			// randomize a heading (1 - 4)
-			newEnemyTankObject.heading = Math.floor(Math.random() * 4) + 1;
-
+			// randomize an initial heading - using the compass points
+			newEnemyTankObject.heading = (90 * (Math.floor(Math.random() * 4) );
+			// randomize an initial velocity 5, 10, 15 or 20
+			newEnemyTankObject.velocity = (5 * (Math.floor(Math.random() * 4 + 1) );
+			
 			// add this new tank to our array
 			enemyTanks.push(newEnemyTankObject);
 			console.log("Added tank " + tankCounter + " added to the array");
 		}
+		
+		// create a single target tank
+		playerTank = new PlayerTankClass(1);
+		// assign initial X and Y co-ords
+		// randomize them anywhere on the canvas - minus a 100 pix border
+		playerTank.x = Math.floor(Math.random()
+				* (ctx.canvas.width - 100)) + 1;
+		playerTank.y = Math.floor(Math.random()
+				* (ctx.canvas.height - 100)) + 1;
+		// randomize a heading (1 - 4)
+		playerTank.heading = Math.floor(Math.random() * 4) + 1;
+
 
 		// how many enemy tanks in the array?
 		console.log("Size of enemy tank array: " + enemyTanks.length);
@@ -158,13 +180,54 @@ body {
 			angle = 0;
 		}
 
-		// Draw the enemy tanks
-		//		console.log("eTankDir: "+eTankDir);
-		//		console.log("eTankX: "+eTankX);
-		//		console.log("eTankY: "+eTankY);
-
+		
+		
 		for (var tankNumber = 1; tankNumber < enemyTanks.length; tankNumber++) {
-			//console.log("Tank number: "+tankNumber+", current heading: "+enemyTanks[tankNumber].heading);
+			console.log("Tank number: "+tankNumber+", current heading: "+enemyTanks[tankNumber].heading+", Behavior: "+enemyTanks[tankNumber].behavior);
+			console.log("Tank Velocity: "+enemyTanks[tankNumber].velocity);
+			
+			// determine if forward progress will hit an object
+			// start with the walls
+			// compute our new hypothetical X,Y if we continue in this direction at our current speed
+			var hypoX = enemyTanks[tankNumber].x += Math.cos(enemyTanks[tankNumber].heading * TO_RADIANS) * enemyTanks[tankNumber].velocity;
+			var hypoY = enemyTanks[tankNumber].y += Math.sin(enemyTanks[tankNumber].heading * TO_RADIANS) * enemyTanks[tankNumber].velocity;
+			
+			// will it hit a wall?
+			if ( (hypoX < 10) || (hypoX > (ctx.canvas.width - 10)) || (hypoY < 10) || (hypoY > (ctx.canvas.height - 10)) ){
+				console.log("At it's current velocity and direction - tank "+tankNumber+" will hit a wall.  Reversing");
+				enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
+			}
+	
+			// will it hit another tank?  note - we now might be in risk of backing into one to avoid a wall!
+			// run through all of the current enemy tanks
+			for (var checkTank = 1; checkTank <enemyTanks.length; checkTank++ ) {
+				if (checkTank != tankNumber) {
+					// we don't check for collisions with ourself!
+					// (start_x1, start_y1, dir1, velo1, start_x2, start_y2, dir2, velo2)
+					if ( enemyTanks[tankNumber].x,
+							enemyTanks[tankNumber].y,
+							enemyTanks[tankNumber].heading,
+							enemyTanks[tankNumber].velocity,
+							enemyTanks[checkTank].x,
+							enemyTanks[checkTank].y,
+							enemyTanks[checkTank].heading,
+							enemyTanks[checkTank].velocity) {
+						console.log("Tank "+tankNumber+" will collide with Tank "+checkTank+" if it continues - stopping");
+						enemyTanks[tankNumber].velocity = 0;
+					} else {
+						console.log("Tank "+tankNumber+" will NOT collide with Tank "+checkTank);
+					}
+				}
+			}
+			
+			// go ahead and move if you can
+			if (enemyTanks[tankNumber].velocity != 0) {
+				enemyTanks[tankNumber].x = enemyTanks[tankNumber].x += Math.cos(enemyTanks[tankNumber].heading * TO_RADIANS) * enemyTanks[tankNumber].velocity;
+				enemyTanks[tankNumber].y = enemyTanks[tankNumber].y += Math.sin(enemyTanks[tankNumber].heading * TO_RADIANS) * enemyTanks[tankNumber].velocity;
+
+			}
+
+/*			
 			switch (enemyTanks[tankNumber].heading) {
 			case 1:
 				enemyTanks[tankNumber].x += 5;
@@ -195,7 +258,7 @@ body {
 				break;
 
 			}
-
+*/
 			//console.log("gun width: "+enemyTankGun.width+", height: "+enemyTankGun.height);
 			// gun width: 72, height: 42
 
@@ -216,8 +279,34 @@ body {
 			ctx.rotate(gunAngle * Math.PI / 180);
 			ctx.drawImage(enemyTankGun, -20, -22);
 			ctx.restore();
+			
+			// show our gunRange and scanRange
+			// scan range
+		    ctx.beginPath();
+		    ctx.arc(enemyTanks[tankNumber].x, enemyTanks[tankNumber].y, enemyTanks[tankNumber].scanRange, 0, 2 * Math.PI, false);
+//		    ctx.fillStyle = 'green';
+//		    ctx.fill();
+		    ctx.lineWidth = 5;
+		    ctx.strokeStyle = 'green';
+		    ctx.stroke();
 
+		    // gun range
+		    ctx.beginPath();
+		    ctx.arc(enemyTanks[tankNumber].x, enemyTanks[tankNumber].y, enemyTanks[tankNumber].gunRange, 0, 2 * Math.PI, false);
+		    ctx.lineWidth = 5;
+		    ctx.strokeStyle = 'red';
+		    ctx.stroke();
 		}
+		
+		// Draw the target (Player) tank
+		drawRotatedImage(playerTank.vehicleImage, playerTank.x, playerTank.y, (playerTank.heading - 1) * 90, ctx);
+		// Draw the target (Player) tank turret
+		ctx.save();
+		ctx.translate(playerTank.x, playerTank.y);
+		ctx.rotate(angle * Math.PI / 180);
+		ctx.drawImage(playerTankGun, -20, -22);
+		ctx.restore();
+		
 
 	}
 
