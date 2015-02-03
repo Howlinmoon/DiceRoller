@@ -126,7 +126,7 @@ body {
 				+ ctx.canvas.height);
 
 		// create a bunch of enemy tanks
-		for (var tankCounter = 1; tankCounter <= 5; tankCounter++) {
+		for (var tankCounter = 1; tankCounter <= 3; tankCounter++) {
 			// Spawn a new enemy tank, and assign it's id
 			var newEnemyTankObject = new EnemyTankClass(tankCounter);
 			// assign initial X and Y co-ords
@@ -137,8 +137,8 @@ body {
 					* (ctx.canvas.height - 100)) + 1;
 			// randomize an initial heading - using the compass points
 			newEnemyTankObject.heading = (90 * (Math.floor(Math.random() * 4) ) );
-			// randomize an initial velocity 5, 10, 15 or 20
-			newEnemyTankObject.velocity = (5 * (Math.floor(Math.random() * 4 + 1) ) );
+			// randomize an initial velocity 1 - 5
+			newEnemyTankObject.velocity = 5 ;
 			
 			// add this new tank to our array
 			enemyTanks.push(newEnemyTankObject);
@@ -207,11 +207,11 @@ body {
 					if ( enemyTanks[tankNumber].x,
 							enemyTanks[tankNumber].y,
 							enemyTanks[tankNumber].heading,
-							enemyTanks[tankNumber].velocity,
+							enemyTanks[tankNumber].velocity * 4,
 							enemyTanks[checkTank].x,
 							enemyTanks[checkTank].y,
 							enemyTanks[checkTank].heading,
-							enemyTanks[checkTank].velocity) {
+							enemyTanks[checkTank].velocity * 4) {
 						console.log("Tank "+tankNumber+" will collide with Tank "+checkTank+" if it continues - stopping");
 						enemyTanks[tankNumber].velocity = 0;
 					} else {
@@ -224,7 +224,7 @@ body {
 			if ( enemyTanks[tankNumber].x,
 					enemyTanks[tankNumber].y,
 					enemyTanks[tankNumber].heading,
-					enemyTanks[tankNumber].velocity,
+					enemyTanks[tankNumber].velocity * 4,
 					playerTank.x,
 					playerTank.y,
 					playerTank.heading,
@@ -296,6 +296,7 @@ body {
 			ctx.drawImage(enemyTankGun, -20, -22);
 			ctx.restore();
 			
+/*
 			// show our gunRange and scanRange
 			// scan range
 		    ctx.beginPath();
@@ -312,6 +313,15 @@ body {
 		    ctx.lineWidth = 5;
 		    ctx.strokeStyle = 'red';
 		    ctx.stroke();
+*/
+		    // collision range
+		    ctx.beginPath();
+		    // context.arc(x, y, radius, startAngle, endAngle, anticlockwise);
+		    ctx.arc(enemyTanks[tankNumber].x, enemyTanks[tankNumber].y, 20 * 4 , 0, 2 * Math.PI, false);
+		    ctx.lineWidth = 5;
+		    ctx.strokeStyle = 'blue';
+		    ctx.stroke();
+
 		}
 		
 		// Draw the target (Player) tank
