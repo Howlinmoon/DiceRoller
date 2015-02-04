@@ -165,9 +165,9 @@ body {
 		playerTank.x = 250;
 		playerTank.y = 250;
 		playerTank.velocity = 0;
-		enemyTanks[0].x = 250;
-		enemyTanks[0].y = 100;
-		enemyTanks[0].heading = 270;
+		enemyTanks[0].x = 500;
+		enemyTanks[0].y = 250;
+		enemyTanks[0].heading = 180;
 
 		// how many enemy tanks in the array?
 		console.log("Size of enemy tank array: " + enemyTanks.length);
@@ -227,13 +227,13 @@ body {
 			if ( hypoY < 10 ) {
 				// hit the north wall - reverse direction, and place tank away from the wall.
 				enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
-				enemyTanks[tankNumber].y = 20;
+				//enemyTanks[tankNumber].y = 20;
 			}
 				
 			if (hypoY > (ctx.canvas.height - 10))  {
 				// hit the south wall - reverse direction, and place tank away from the wall.
 				enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
-				enemyTanks[tankNumber].y = (ctx.canvas.height - 20);
+				//enemyTanks[tankNumber].y = (ctx.canvas.height - 20);
 			}
 			
 	
@@ -264,14 +264,37 @@ body {
 			*/
 			
 			console.log("Player Tank Direction and Velocity: "+playerTank.heading+" , "+playerTank.velocity);
-			// check to make sure we will not collide with the target tank
-			// for this check, we will consider the projected contact point 4px wide, and the tank, 56px wide
-			if  (hypoX  >= playerTank.x && hypoX <= playerTank.x + 56 && hypoY >= playerTank.y  + 56 && hypoY <= playerTank.y + 56) {
+			// check to make sure we will not collide with the target tank if we keeo moving
+			// this check is to PREVENT a collision not to DETECT one
+			
+			// player tank  bounding box: ctx.strokeRect(playerTank.x - 40, playerTank.y - 34, 76, 74)
+			// enemy tank bounding box: ctx.strokeRect(hypoX-40, hypoY, 76, 37);
+
+			var boundBoxX = playerTank.x - 40;
+			var boundBoxY = playerTank.y - 34;
+			var playerTankW = 76;
+			var playerTankH = 74;
+			
+			var collideX = false;
+			var collideY = false;
+			if (hypoX + 40 >= boundBoxX && hypoX - 40 <= boundBoxX ) {
+				console.log("Possible Collision on the X detected");
+				collideX = true;
+			} else {
+				console.log("No collision on the X detected");
+			}
+			
+			if (hypoY  >= boundBoxY && hypoY <= boundBoxY + playerTankH ) {
+				console.log("Possible Collision on the Y detected");
+				collideY = true;
+			} else {
+				console.log("No collision on the Y detected");
+			}
+
+			if (collideX && collideY) {
 				console.log("Tank "+tankNumber+" will collide with Player Tank if it continues - stopping");
 				enemyTanks[tankNumber].velocity = 0;
 				clearInterval(animateInterval);  // stop the animation loop
-			} else {
-				console.log("Tank "+tankNumber+" will NOT collide with Player Tank");
 			}
 			
 			
@@ -398,6 +421,11 @@ body {
 	    
 	    ctx.strokeRect(playerTank.x - 40, playerTank.y - 34, 76, 74)
 	    
+		// Draw the collision rectangle
+		// CQ = enemyTanks[tankNumber].velocity * 10;
+	    // QA = 1/2 tank width or 30 roughly
+	    
+	    
 
 
 	}
@@ -440,7 +468,7 @@ body {
 		
 	</script>
 
-	<canvas id="my_canvas" width="1280" height="1024"></canvas>
+	<canvas id="my_canvas" width="1280" height="512"></canvas>
 
 
 </body>
