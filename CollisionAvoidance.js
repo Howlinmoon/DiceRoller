@@ -6,7 +6,7 @@ var TO_RADIANS = Math.PI / 180;
 
 function willCollide(start_x1, start_y1, dir1, velo1, start_x2, start_y2, dir2,
 		velo2) {
-	console.log(ctx.canvas.id + " | " + ctx.canvas.width + " | "
+	console.log(ctx.canvas.id + " -|- " + ctx.canvas.width + " -|- "
 			+ ctx.canvas.height);
 	
 
