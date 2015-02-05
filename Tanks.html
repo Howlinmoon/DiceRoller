@@ -327,27 +327,37 @@ body {
 			// Assume a distance of 100
 			var distR =100;
 			
-			var Ax = distR * Math.cos(upperAngle);
-			var Ay = distR * Math.sin(upperAngle);
+			var Ax = distR * Math.cos(upperAngle) + enemyTanks[tankNumber].x;
+			var Ay = distR * Math.sin(upperAngle)+ enemyTanks[tankNumber].y;
 			
-			var Bx = distR * Math.cos(lowerAngle);
-			var By = distR * Math.sin(lowerAngle);
+			var Bx = distR * Math.cos(lowerAngle) + enemyTanks[tankNumber].x;
+			var By = distR * Math.sin(lowerAngle) + enemyTanks[tankNumber].y;
 			
 			
 			// Draw point A
 		    ctx.beginPath();
-		    ctx.arc(enemyTanks[tankNumber].x + Ax, enemyTanks[tankNumber].y + Ay, 5 , 0, 2 * Math.PI, false);
+		    ctx.arc(Ax, Ay, 5 , 0, 2 * Math.PI, false);
 		    ctx.lineWidth = 5;
 		    ctx.strokeStyle = "orange";
 		    ctx.stroke();
 
 			// Draw point B
 		    ctx.beginPath();
-		    ctx.arc(enemyTanks[tankNumber].x + Bx, enemyTanks[tankNumber].y + By, 5 , 0, 2 * Math.PI, false);
+		    ctx.arc(Bx, By, 5 , 0, 2 * Math.PI, false);
 		    ctx.lineWidth = 5;
 		    ctx.strokeStyle = "blue";
 		    ctx.stroke();
 			
+			
+		    ctx.strokeStyle = "yellow";
+			ctx.moveTo(Cx, Cy);
+			ctx.lineTo(Ax, Ay);
+			ctx.lineTo(Bx, By);
+			ctx.closePath();
+			ctx.stroke();
+
+
+
 			
 			
 /* 			var Ax = lengthAC * (  Math.sin( ( (angleC / 2) - enemyTanks[tankNumber].heading) * TO_RADIANS));
