@@ -165,9 +165,9 @@ body {
 		playerTank.x = 250;
 		playerTank.y = 250;
 		playerTank.velocity = 0;
-		enemyTanks[0].x = 500;
+		enemyTanks[0].x = 50;
 		enemyTanks[0].y = 250;
-		enemyTanks[0].heading = 180;
+		enemyTanks[0].heading = 0;
 
 		// how many enemy tanks in the array?
 		console.log("Size of enemy tank array: " + enemyTanks.length);
@@ -196,6 +196,7 @@ body {
 		
 		
 		for (var tankNumber = 0; tankNumber < enemyTanks.length; tankNumber++) {
+			enemyTanks[tankNumber].heading = angle;
 			console.log("Tank number: "+tankNumber+", current heading: "+enemyTanks[tankNumber].heading+", Behavior: "+enemyTanks[tankNumber].behavior);
 			console.log("Tank Velocity: "+enemyTanks[tankNumber].velocity);
 			
@@ -297,6 +298,33 @@ body {
 				clearInterval(animateInterval);  // stop the animation loop
 			}
 			
+			// enemyTanks[tankNumber].velocity * 10
+			// attempt to create the collision triangle
+			var lengthCQ = 65.81;
+			var lengthAB = 76.0;
+			var lengthAC = 76.0;
+			var angleC = 60;
+			var Qx = enemyTanks[tankNumber].x + Math.cos(enemyTanks[tankNumber].heading * TO_RADIANS) *  76;
+			var Qy = enemyTanks[tankNumber].y + Math.sin(enemyTanks[tankNumber].heading * TO_RADIANS)  * 76;
+			var Cx = enemyTanks[tankNumber].x;
+			var Cy = enemyTanks[tankNumber].y;
+			var Ax = lengthAC * (  -1 *   Math.sin( ( (angleC / 2) - enemyTanks[tankNumber].heading) * TO_RADIANS));
+			var Ay = lengthAC * (      Math.cos( ( (angleC / 2) - enemyTanks[tankNumber].heading) * TO_RADIANS));
+			var Bx = lengthAB * (   -1 *    Math.sin( ( (angleC / 2) - enemyTanks[tankNumber].heading) * TO_RADIANS));
+			var By = lengthAB * (-1 * Math.cos( ( (angleC / 2) - enemyTanks[tankNumber].heading) * TO_RADIANS));
+			
+			console.log("Triangle:  Cx, Cy   Ax,Ay  Bx,By "+Cx+" , "+Cy+"  "+Ax+" , "+Ay+"  "+Bx+" , "+By);
+
+			// apply them as offsets to see what happens
+			var T1x = enemyTanks[tankNumber].x;
+			var T1y = enemyTanks[tankNumber].y;
+			
+			var T2x = enemyTanks[tankNumber].x + Ax;
+			var T2y = enemyTanks[tankNumber].y + Ay;
+			
+			var T3x = enemyTanks[tankNumber].x + Bx;
+			var T3y = enemyTanks[tankNumber].y + By;
+
 			
 			// go ahead and move if you can
 			if (enemyTanks[tankNumber].velocity != 0) {
@@ -342,7 +370,7 @@ body {
 
 			drawRotatedImage(enemyTanks[tankNumber].vehicleImage,
 					enemyTanks[tankNumber].x, enemyTanks[tankNumber].y,
-					(enemyTanks[tankNumber].heading - 1) * 90, ctx);
+					enemyTanks[tankNumber].heading , ctx);
 			// and the gun - always point it at the center of the map
 			// var angleDeg = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
 			var centerX = ctx.canvas.width / 2;
@@ -425,7 +453,15 @@ body {
 		// CQ = enemyTanks[tankNumber].velocity * 10;
 	    // QA = 1/2 tank width or 30 roughly
 	    
-	    
+		console.log("Triangle:  T1x, T1y   T2x,T2y  T3x,T3y "+T1x+" , "+T1y+"  "+T2x+" , "+T2y+"  "+T3x+" , "+T3y);
+
+		
+		ctx.moveTo(T1x, T1y);
+		ctx.lineTo(T2x, T2y);
+		ctx.lineTo(T3x, T3y);
+		ctx.closePath();
+		ctx.stroke();
+
 
 
 	}
