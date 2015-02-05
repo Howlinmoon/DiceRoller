@@ -162,10 +162,10 @@ body {
 		playerTank.heading = Math.floor(Math.random() * 4) + 1;
 
 		// collision testing using enemy tank #2
-		playerTank.x = 250;
+		playerTank.x = 350;
 		playerTank.y = 250;
 		playerTank.velocity = 0;
-		enemyTanks[0].x = 50;
+		enemyTanks[0].x = 150;
 		enemyTanks[0].y = 250;
 		enemyTanks[0].heading = 0;
 
@@ -264,6 +264,13 @@ body {
 			}
 			*/
 			
+			var urlTankDir = GetUrlValue("tankDir");
+			if (urlTankDir == undefined) {
+				urlTankDir = 0;
+			}
+			console.log("Use Specified Tank Direction: "+urlTankDir);
+			enemyTanks[tankNumber].heading = urlTankDir;
+			
 			console.log("Player Tank Direction and Velocity: "+playerTank.heading+" , "+playerTank.velocity);
 			// check to make sure we will not collide with the target tank if we keeo moving
 			// this check is to PREVENT a collision not to DETECT one
@@ -304,17 +311,57 @@ body {
 			var lengthAB = 76.0;
 			var lengthAC = 76.0;
 			var angleC = 60;
+			
+			enemyTanks[tankNumber].velocity = 0;
+			
 			var Qx = enemyTanks[tankNumber].x + Math.cos(enemyTanks[tankNumber].heading * TO_RADIANS) *  76;
 			var Qy = enemyTanks[tankNumber].y + Math.sin(enemyTanks[tankNumber].heading * TO_RADIANS)  * 76;
 			var Cx = enemyTanks[tankNumber].x;
 			var Cy = enemyTanks[tankNumber].y;
-			var Ax = lengthAC * (  -1 *   Math.sin( ( (angleC / 2) - enemyTanks[tankNumber].heading) * TO_RADIANS));
-			var Ay = lengthAC * (      Math.cos( ( (angleC / 2) - enemyTanks[tankNumber].heading) * TO_RADIANS));
-			var Bx = lengthAB * (   -1 *    Math.sin( ( (angleC / 2) - enemyTanks[tankNumber].heading) * TO_RADIANS));
-			var By = lengthAB * (-1 * Math.cos( ( (angleC / 2) - enemyTanks[tankNumber].heading) * TO_RADIANS));
 			
+			// upperAngle is for point Ax,Ay
+			var upperAngle = (angle - 30) * TO_RADIANS;
+			// lowerAngle is for point Bx,By
+			var lowerAngle = (angle + 30) * TO_RADIANS;
+			
+			// Assume a distance of 100
+			var distR =100;
+			
+			var Ax = distR * Math.cos(upperAngle);
+			var Ay = distR * Math.sin(upperAngle);
+			
+			var Bx = distR * Math.cos(lowerAngle);
+			var By = distR * Math.sin(lowerAngle);
+			
+			
+			// Draw point A
+		    ctx.beginPath();
+		    ctx.arc(enemyTanks[tankNumber].x + Ax, enemyTanks[tankNumber].y + Ay, 5 , 0, 2 * Math.PI, false);
+		    ctx.lineWidth = 5;
+		    ctx.strokeStyle = "orange";
+		    ctx.stroke();
+
+			// Draw point B
+		    ctx.beginPath();
+		    ctx.arc(enemyTanks[tankNumber].x + Bx, enemyTanks[tankNumber].y + By, 5 , 0, 2 * Math.PI, false);
+		    ctx.lineWidth = 5;
+		    ctx.strokeStyle = "blue";
+		    ctx.stroke();
+			
+			
+			
+/* 			var Ax = lengthAC * (  Math.sin( ( (angleC / 2) - enemyTanks[tankNumber].heading) * TO_RADIANS));
+			var Ay = lengthAC * (  Math.cos( ( (angleC / 2) - enemyTanks[tankNumber].heading) * TO_RADIANS));
+			var Bx = lengthAB * (  Math.sin( ( (angleC / 2) - enemyTanks[tankNumber].heading) * TO_RADIANS));
+			var By = lengthAB * (  Math.cos( ( (angleC / 2) - enemyTanks[tankNumber].heading) * TO_RADIANS));
+ */			
 			console.log("Triangle:  Cx, Cy   Ax,Ay  Bx,By "+Cx+" , "+Cy+"  "+Ax+" , "+Ay+"  "+Bx+" , "+By);
 
+			
+			// BREAKTHROUGH - need to use Polar Co-ordinates!
+			
+			
+			
 			// apply them as offsets to see what happens
 			var T1x = enemyTanks[tankNumber].x;
 			var T1y = enemyTanks[tankNumber].y;
@@ -452,7 +499,8 @@ body {
 		// Draw the collision rectangle
 		// CQ = enemyTanks[tankNumber].velocity * 10;
 	    // QA = 1/2 tank width or 30 roughly
-	    
+
+	    /*
 		console.log("Triangle:  T1x, T1y   T2x,T2y  T3x,T3y "+T1x+" , "+T1y+"  "+T2x+" , "+T2y+"  "+T3x+" , "+T3y);
 
 		
@@ -461,7 +509,7 @@ body {
 		ctx.lineTo(T3x, T3y);
 		ctx.closePath();
 		ctx.stroke();
-
+*/
 
 
 	}
@@ -489,6 +537,17 @@ body {
 
 	function randomNumber(min, max) {
 		return Math.floor(Math.random() * (max - min)) + min;
+	}
+	
+	function GetUrlValue(VarSearch){
+	    var SearchString = window.location.search.substring(1);
+	    var VariableArray = SearchString.split('&');
+	    for(var i = 0; i < VariableArray.length; i++){
+	        var KeyValuePair = VariableArray[i].split('=');
+	        if(KeyValuePair[0] == VarSearch){
+	            return KeyValuePair[1];
+	        }
+	    }
 	}
 
 	window.addEventListener('load', function(event) {
