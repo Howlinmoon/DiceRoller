@@ -191,7 +191,8 @@ body {
 			angle = 0;
 		}
 
-		
+		// var to store our collision result
+		var collisionResult = "None";
 		
 		for (var tankNumber = 0; tankNumber < enemyTanks.length; tankNumber++) {
 			//enemyTanks[tankNumber].heading = angle;
@@ -213,6 +214,7 @@ body {
 			if ( hypoX < 10 ) {
 				// hit the west wall - reverse direction
 				//enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
+				// Math.floor(Math.random() * 2) + 1
 				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 45;
 			}
 				
@@ -276,10 +278,27 @@ body {
 
 
 					// check for possible collision
-					if  (willCollide(Ax, Ay, Bx, By, boundBoxX, boundBoxY)) {
-						// adjust tank heading
+					collisionResult =  willCollide(Ax, Ay, Bx, By, boundBoxX, boundBoxY);
+					if (collisionResult == "Left") {
+						// adjust tank heading to the right
 						enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 45;
 					}
+
+					if (collisionResult == "Right") {
+						// adjust tank heading to the left
+						enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 45;
+					}
+					
+					if (collisionResult == "Both") {
+						// randomly adjust the tank heading
+						if  ( (Math.floor(Math.random() * 2) + 1) == 1) {
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 45;
+						} else {
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 45;
+						}
+					}
+
+
 				}	
 			}	
 			

@@ -3,12 +3,13 @@ function willCollide(Ax, Ay, Bx, By, boundBoxX, boundBoxY) {
 	// Ax,Ay or Bx,By is within the player tank bounding box
 	var collideX = false;
 	var collideY = false;
-	var imminent = false;
+	var collisionResult = "None";
 	// check Ax and Bx separately for simplicity
 	if (Ax >= boundBoxX && Ax <= boundBoxX + 75) {
 		console.log("Possible Collision on the X detected by Ax");
 		console.log("Ax, boundBoxX: " + Ax + " , " + boundBoxX);
 		collideX = true;
+		collisionResult = "Left";
 	} else {
 		console.log("No collision on the X detected by Ax");
 	}
@@ -17,6 +18,11 @@ function willCollide(Ax, Ay, Bx, By, boundBoxX, boundBoxY) {
 		console.log("Possible Collision on the X detected by Bx");
 		console.log("Bx, boundBoxX: " + Bx + " , " + boundBoxX);
 		collideX = true;
+		if ( collisionResult == "None") {
+			collisionResult = "Right";
+		} else {
+			collisionResult = "Both";
+		}
 	} else {
 		console.log("No collision on the X detected by Bx");
 	}
@@ -25,6 +31,11 @@ function willCollide(Ax, Ay, Bx, By, boundBoxX, boundBoxY) {
 		console.log("Possible Collision on the Y detected by Ay");
 		console.log("Ay, boundBoxY: " + Ay + " , " + boundBoxY);
 		collideY = true;
+		if ( collisionResult == "None") {
+			collisionResult = "Left";
+		} else {
+			collisionResult = "Both";
+		}
 	} else {
 		console.log("No collision on the Y detected by Ay");
 	}
@@ -33,12 +44,17 @@ function willCollide(Ax, Ay, Bx, By, boundBoxX, boundBoxY) {
 		console.log("Possible Collision on the Y detected by By");
 		console.log("By, boundBoxY: " + By + " , " + boundBoxY);
 		collideY = true;
+		if ( collisionResult == "None") {
+			collisionResult = "Right";
+		} else {
+			collisionResult = "Both";
+		}
 	} else {
 		console.log("No collision on the Y detected by By");
 	}
 
 	if (collideX && collideY) {
-		imminent = true;
+		collisionResult = "Both";
 	}
-	return imminent;
+	return collisionResult;
 }
