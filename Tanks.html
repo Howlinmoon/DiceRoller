@@ -47,7 +47,7 @@ body {
 		// a graphic image
 		// and an Id?
 		this.x = 0, this.y = 0, this.heading = 0, this.health = 100,
-				this.id = 0, this.velocity = 0;
+				this.id = 0, this.velocity = 0, this.lastCollision = "None";
 		this.vehicleImage = new Image();
 	}
 
@@ -125,13 +125,24 @@ body {
 		console.log(ctx.canvas.id + " | " + ctx.canvas.width + " | "
 				+ ctx.canvas.height);
 
+		var stop_button   = document.getElementById('stop_button');
+
+		
 		// create a bunch of enemy tanks
 		// 0 = right
 		// 90 = up
 		// 180 = left
 		// 270 = down
 
-		for (var tankCounter = 1; tankCounter <= 12; tankCounter++) {
+			var urlNumTanks = GetUrlValue("numTanks");
+			if (urlNumTanks != undefined) {
+				console.log("Use Specified number of tanks: "+urlNumTanks);
+			} else {
+				urlNumTanks = 4;
+			}
+
+		
+		for (var tankCounter = 1; tankCounter <= urlNumTanks; tankCounter++) {
 			// Spawn a new enemy tank, and assign it's id
 			var newEnemyTankObject = new EnemyTankClass(tankCounter);
 			// assign initial X and Y co-ords
@@ -172,6 +183,13 @@ body {
 
 		animateInterval = setInterval(animate, 100);
 		//setInterval("animate()", 100);
+		
+		// stop button mouse down
+		stop_button.addEventListener('mousedown', function (event) {
+			console.log("Attempting to stop animation");
+			clearInterval(animateInterval);  // stop the animation loop
+			});
+
 
 	}
 
@@ -215,25 +233,25 @@ body {
 				// hit the west wall - reverse direction
 				//enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
 				// Math.floor(Math.random() * 2) + 1
-				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 45;
+				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
 			}
 				
 			if (hypoX > (ctx.canvas.width - 10))  {
 				// hit the east wall - reverse direction
 				//enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
-				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading +45;
+				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
 			}
 			
 			if ( hypoY < 10 ) {
 				// hit the north wall - reverse direction
 				//enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
-				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 45;
+				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
 			}
 				
 			if (hypoY > (ctx.canvas.height - 10))  {
 				// hit the south wall - reverse direction, and place tank away from the wall.
 				//enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
-				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 45;
+				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
 			}
 			
 			// did we go over 360?
@@ -265,7 +283,8 @@ body {
 
 			var boundBoxX, boundBoxY;
 			
-			for (var checkTank = 1; checkTank <enemyTanks.length; checkTank++ ) {
+			console.log("About to check for collisions with other enemy tanks");
+			for (var checkTank = 0; checkTank <enemyTanks.length; checkTank++ ) {
 				if (checkTank != tankNumber) {
 					// we don't check for collisions with ourself!
 					
@@ -279,22 +298,43 @@ body {
 
 					// check for possible collision
 					collisionResult =  willCollide(Ax, Ay, Bx, By, boundBoxX, boundBoxY);
+					var savedResult = collisionResult;
+					console.log("collisionResult vs eTank "+checkTank+" is: "+collisionResult);
+					// does this tank have an already pending collision event active?
+					console.log("Current .lastCollision: "+enemyTanks[checkTank].lastCollision);
+					if (enemyTanks[checkTank].lastCollision != "None" ) {
+						// yes it does - override our result with our previous direction directive
+						collisionResult = enemyTanks[checkTank].lastCollision;
+					} else {
+						// not it does not, so store our current avoidance direction
+						// note - if the current result is "None", this effectively resets our lastCollision flag
+						enemyTanks[checkTank].lastCollision = collisionResult;
+					}
+					
+					if (savedResult == "None" && collisionResult != "None") {
+						console.log("just now saved collisionResult: "+collisionResult);
+						console.log(".lastCollision: "+enemyTanks[checkTank].lastCollision);
+						console.log("Attempting to stop animation");
+						clearInterval(animateInterval);  // stop the animation loop
+						
+					}
+					
 					if (collisionResult == "Left") {
 						// adjust tank heading to the right
-						enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 45;
+						enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
 					}
 
 					if (collisionResult == "Right") {
 						// adjust tank heading to the left
-						enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 45;
+						enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
 					}
 					
 					if (collisionResult == "Both") {
 						// randomly adjust the tank heading
 						if  ( (Math.floor(Math.random() * 2) + 1) == 1) {
-							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 45;
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
 						} else {
-							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 45;
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
 						}
 					}
 
@@ -302,19 +342,32 @@ body {
 				}	
 			}	
 			
-			var urlTankDir = GetUrlValue("tankDir");
-			if (urlTankDir != undefined) {
-				console.log("Use Specified Tank Direction: "+urlTankDir);
-				enemyTanks[tankNumber].heading = urlTankDir;
-			}
 			
 			// check for collision against the player tank
 			boundBoxX = playerTank.x - 40;
 			boundBoxY = playerTank.y - 34;
-			// check for possible collision
-			if  (willCollide(Ax, Ay, Bx, By, boundBoxX, boundBoxY)) {
-				// adjust tank heading
-				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 45;
+			// check for possible collision with the player tank
+			console.log("collision check vs player tank");
+			collisionResult = willCollide(Ax, Ay, Bx, By, boundBoxX, boundBoxY);
+			console.log("collisionResult vs playerTank is: "+collisionResult);
+
+			if (collisionResult == "Left") {
+				// adjust tank heading to the right
+				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+			}
+
+			if (collisionResult == "Right") {
+				// adjust tank heading to the left
+				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
+			}
+			
+			if (collisionResult == "Both") {
+				// randomly adjust the tank heading
+				if  ( (Math.floor(Math.random() * 2) + 1) == 1) {
+					enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+				} else {
+					enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
+				}
 			}
 			
 			
@@ -459,6 +512,9 @@ body {
 	window.addEventListener('load', function(event) {
 		InitGame();
 	});
+	
+
+	
 </script>
 
 </head>
@@ -470,6 +526,9 @@ body {
 	</script>
 
 	<canvas id="my_canvas" width="1500" height="1500"></canvas>
+	<div id="controls">
+		<button id="stop_button">STOP!</button>
+	</div>
 
 
 </body>
