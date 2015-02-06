@@ -268,8 +268,12 @@ body {
 					// we don't check for collisions with ourself!
 					
 					// create our bounding box
-					boundBoxX = enemyTanks[checkTank].x - 25;
-					boundBoxY = enemyTanks[checkTank].y - 25;
+					boundBoxX = enemyTanks[checkTank].x - 35;
+					boundBoxY = enemyTanks[checkTank].y - 35;
+					
+					// Draw the current target tank bounding box
+					ctx.strokeRect(boundBoxX, boundBoxY, 76, 74)
+
 
 					// check for possible collision
 					if  (willCollide(Ax, Ay, Bx, By, boundBoxX, boundBoxY)) {
