@@ -15,7 +15,7 @@ body {
 }
 </style>
 
-<script src = "CollisionAvoidance.js"></script>
+<script src="willCollide.js"></script>
 
 <script>
 	var enemyTankBase = new Image();
@@ -131,7 +131,7 @@ body {
 		// 180 = left
 		// 270 = down
 
-		for (var tankCounter = 1; tankCounter <= 1; tankCounter++) {
+		for (var tankCounter = 1; tankCounter <= 12; tankCounter++) {
 			// Spawn a new enemy tank, and assign it's id
 			var newEnemyTankObject = new EnemyTankClass(tankCounter);
 			// assign initial X and Y co-ords
@@ -140,10 +140,10 @@ body {
 					* (ctx.canvas.width - 100)) + 1;
 			newEnemyTankObject.y = Math.floor(Math.random()
 					* (ctx.canvas.height - 100)) + 1;
-			// randomize an initial heading - using the compass points
-			newEnemyTankObject.heading = (90 * (Math.floor(Math.random() * 4) ) );
+			// randomize an initial heading
+			newEnemyTankObject.heading = (Math.floor(Math.random() * 360) ) ;
 			// randomize an initial velocity 1 - 5
-			newEnemyTankObject.velocity = 5 ;
+			newEnemyTankObject.velocity = (Math.floor(Math.random() * 3) + 2 );
 			
 			// add this new tank to our array
 			enemyTanks.push(newEnemyTankObject);
@@ -161,14 +161,12 @@ body {
 		// randomize a heading (1 - 4)
 		playerTank.heading = Math.floor(Math.random() * 4) + 1;
 
-		// collision testing using enemy tank #2
+		// collision testing using enemy tank #1
 		playerTank.x = 350;
 		playerTank.y = 250;
 		playerTank.velocity = 0;
-		enemyTanks[0].x = 150;
-		enemyTanks[0].y = 250;
-		enemyTanks[0].heading = 0;
-
+		playerTank.heading = 45;
+		
 		// how many enemy tanks in the array?
 		console.log("Size of enemy tank array: " + enemyTanks.length);
 
@@ -196,7 +194,7 @@ body {
 		
 		
 		for (var tankNumber = 0; tankNumber < enemyTanks.length; tankNumber++) {
-			enemyTanks[tankNumber].heading = angle;
+			//enemyTanks[tankNumber].heading = angle;
 			console.log("Tank number: "+tankNumber+", current heading: "+enemyTanks[tankNumber].heading+", Behavior: "+enemyTanks[tankNumber].behavior);
 			console.log("Tank Velocity: "+enemyTanks[tankNumber].velocity);
 			
@@ -208,137 +206,108 @@ body {
 			var hypoY = enemyTanks[tankNumber].y + Math.sin(enemyTanks[tankNumber].heading * TO_RADIANS)  * enemyTanks[tankNumber].velocity * 10;
 			
 			
-			console.log("Hypothetical X,Y: "+hypoX+" , "+hypoY);
-			console.log("Actual X,Y: "+enemyTanks[tankNumber].x+" , "+enemyTanks[tankNumber].y);			
-//		    enemyTanks[tankNumber].velocity = 0;
+			//console.log("Hypothetical X,Y: "+hypoX+" , "+hypoY);
+			//console.log("Actual X,Y: "+enemyTanks[tankNumber].x+" , "+enemyTanks[tankNumber].y);			
 			
 			// will it hit a wall?
 			if ( hypoX < 10 ) {
-				// hit the west wall - reverse direction, and place tank away from the wall.
-				enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
-				enemyTanks[tankNumber].x = 20;
+				// hit the west wall - reverse direction
+				//enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
+				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 45;
 			}
 				
 			if (hypoX > (ctx.canvas.width - 10))  {
-				// hit the east wall - reverse direction, and place tank away from the wall.
-				enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
-				enemyTanks[tankNumber].x = (ctx.canvas.width - 20);
+				// hit the east wall - reverse direction
+				//enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
+				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading +45;
 			}
 			
 			if ( hypoY < 10 ) {
-				// hit the north wall - reverse direction, and place tank away from the wall.
-				enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
-				//enemyTanks[tankNumber].y = 20;
+				// hit the north wall - reverse direction
+				//enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
+				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 45;
 			}
 				
 			if (hypoY > (ctx.canvas.height - 10))  {
 				// hit the south wall - reverse direction, and place tank away from the wall.
-				enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
-				//enemyTanks[tankNumber].y = (ctx.canvas.height - 20);
+				//enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
+				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 45;
 			}
 			
-	
+			// did we go over 360?
+			if (enemyTanks[tankNumber].heading > 360 ) {
+				// add the other displacement direction
+				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 360;
+			}
+
+			
 			// will it hit another tank?  note - we now might be in risk of backing into one to avoid a wall!
 			// run through all of the current enemy tanks
-			/*
-			for (var checkTank = 1; checkTank <enemyTanks.length; checkTank++ ) {
-				if (checkTank != tankNumber) {
-					// we don't check for collisions with ourself!
-					// (start_x1, start_y1, dir1, velo1, start_x2, start_y2, dir2, velo2)
-					if ( willCollide(enemyTanks[tankNumber].x,
-							enemyTanks[tankNumber].y,
-							enemyTanks[tankNumber].heading,
-							enemyTanks[tankNumber].velocity * 4,
-							enemyTanks[checkTank].x,
-							enemyTanks[checkTank].y,
-							enemyTanks[checkTank].heading,
-							enemyTanks[checkTank].velocity * 4)) {
-						console.log("Tank "+tankNumber+" will collide with Tank "+checkTank+" if it continues - stopping");
-						enemyTanks[tankNumber].velocity = 0;
-						clearInterval(animateInterval);  // stop the animation loop
-
-					} else {
-						console.log("Tank "+tankNumber+" will NOT collide with Tank "+checkTank);
-					}
-				}
-			}
-			*/
 			
-			var urlTankDir = GetUrlValue("tankDir");
-			if (urlTankDir == undefined) {
-				urlTankDir = 0;
-			}
-			console.log("Use Specified Tank Direction: "+urlTankDir);
-			enemyTanks[tankNumber].heading = urlTankDir;
-			
-			console.log("Player Tank Direction and Velocity: "+playerTank.heading+" , "+playerTank.velocity);
-			// check to make sure we will not collide with the target tank if we keeo moving
-			// this check is to PREVENT a collision not to DETECT one
-			
-			// player tank  bounding box: ctx.strokeRect(playerTank.x - 40, playerTank.y - 34, 76, 74)
-			// enemy tank bounding box: ctx.strokeRect(hypoX-40, hypoY, 76, 37);
-
-			var boundBoxX = playerTank.x - 40;
-			var boundBoxY = playerTank.y - 34;
-			var playerTankW = 76;
-			var playerTankH = 74;
-			
-			var collideX = false;
-			var collideY = false;
-			if (hypoX + 40 >= boundBoxX && hypoX - 40 <= boundBoxX ) {
-				console.log("Possible Collision on the X detected");
-				collideX = true;
-			} else {
-				console.log("No collision on the X detected");
-			}
-			
-			if (hypoY  >= boundBoxY && hypoY <= boundBoxY + playerTankH ) {
-				console.log("Possible Collision on the Y detected");
-				collideY = true;
-			} else {
-				console.log("No collision on the Y detected");
-			}
-
-			if (collideX && collideY) {
-				console.log("Tank "+tankNumber+" will collide with Player Tank if it continues - stopping");
-				enemyTanks[tankNumber].velocity = 0;
-				clearInterval(animateInterval);  // stop the animation loop
-			}
-			
-			// enemyTanks[tankNumber].velocity * 10
-			// attempt to create the collision triangle
-			var lengthCQ = 65.81;
-			var lengthAB = 76.0;
-			var lengthAC = 76.0;
-			var angleC = 60;
-			
-			enemyTanks[tankNumber].velocity = 0;
-			
-			var Qx = enemyTanks[tankNumber].x + Math.cos(enemyTanks[tankNumber].heading * TO_RADIANS) *  76;
-			var Qy = enemyTanks[tankNumber].y + Math.sin(enemyTanks[tankNumber].heading * TO_RADIANS)  * 76;
 			var Cx = enemyTanks[tankNumber].x;
 			var Cy = enemyTanks[tankNumber].y;
 			
 			// upperAngle is for point Ax,Ay
-			var upperAngle = (angle - 30) * TO_RADIANS;
+			var upperAngle = (enemyTanks[tankNumber].heading - 18) * TO_RADIANS;
 			// lowerAngle is for point Bx,By
-			var lowerAngle = (angle + 30) * TO_RADIANS;
+			var lowerAngle = (enemyTanks[tankNumber].heading + 18) * TO_RADIANS;
 			
 			// Assume a distance of 100
 			var distR =100;
 			
 			var Ax = distR * Math.cos(upperAngle) + enemyTanks[tankNumber].x;
-			var Ay = distR * Math.sin(upperAngle)+ enemyTanks[tankNumber].y;
+			var Ay = distR * Math.sin(upperAngle) + enemyTanks[tankNumber].y;
 			
 			var Bx = distR * Math.cos(lowerAngle) + enemyTanks[tankNumber].x;
 			var By = distR * Math.sin(lowerAngle) + enemyTanks[tankNumber].y;
+
+			var boundBoxX, boundBoxY;
 			
+			for (var checkTank = 1; checkTank <enemyTanks.length; checkTank++ ) {
+				if (checkTank != tankNumber) {
+					// we don't check for collisions with ourself!
+					
+					// create our bounding box
+					boundBoxX = enemyTanks[checkTank].x - 25;
+					boundBoxY = enemyTanks[checkTank].y - 25;
+
+					// check for possible collision
+					if  (willCollide(Ax, Ay, Bx, By, boundBoxX, boundBoxY)) {
+						// adjust tank heading
+						enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 45;
+					}
+				}	
+			}	
+			
+			var urlTankDir = GetUrlValue("tankDir");
+			if (urlTankDir != undefined) {
+				console.log("Use Specified Tank Direction: "+urlTankDir);
+				enemyTanks[tankNumber].heading = urlTankDir;
+			}
+			
+			// check for collision against the player tank
+			boundBoxX = playerTank.x - 40;
+			boundBoxY = playerTank.y - 34;
+			// check for possible collision
+			if  (willCollide(Ax, Ay, Bx, By, boundBoxX, boundBoxY)) {
+				// adjust tank heading
+				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 45;
+			}
+			
+			
+			// Draw the scanning triangle
+		    ctx.strokeStyle = "yellow";
+			ctx.moveTo(Cx, Cy);
+			ctx.lineTo(Ax, Ay);
+			ctx.lineTo(Bx, By);
+			ctx.closePath();
+			ctx.stroke();
 			
 			// Draw point A
 		    ctx.beginPath();
 		    ctx.arc(Ax, Ay, 5 , 0, 2 * Math.PI, false);
 		    ctx.lineWidth = 5;
-		    ctx.strokeStyle = "orange";
+		    ctx.strokeStyle = "red";
 		    ctx.stroke();
 
 			// Draw point B
@@ -348,39 +317,9 @@ body {
 		    ctx.strokeStyle = "blue";
 		    ctx.stroke();
 			
-			
-		    ctx.strokeStyle = "yellow";
-			ctx.moveTo(Cx, Cy);
-			ctx.lineTo(Ax, Ay);
-			ctx.lineTo(Bx, By);
-			ctx.closePath();
-			ctx.stroke();
-
-
-
+			console.log("Player Tank Direction and Velocity: "+playerTank.heading+" , "+playerTank.velocity);
 			
 			
-/* 			var Ax = lengthAC * (  Math.sin( ( (angleC / 2) - enemyTanks[tankNumber].heading) * TO_RADIANS));
-			var Ay = lengthAC * (  Math.cos( ( (angleC / 2) - enemyTanks[tankNumber].heading) * TO_RADIANS));
-			var Bx = lengthAB * (  Math.sin( ( (angleC / 2) - enemyTanks[tankNumber].heading) * TO_RADIANS));
-			var By = lengthAB * (  Math.cos( ( (angleC / 2) - enemyTanks[tankNumber].heading) * TO_RADIANS));
- */			
-			console.log("Triangle:  Cx, Cy   Ax,Ay  Bx,By "+Cx+" , "+Cy+"  "+Ax+" , "+Ay+"  "+Bx+" , "+By);
-
-			
-			// BREAKTHROUGH - need to use Polar Co-ordinates!
-			
-			
-			
-			// apply them as offsets to see what happens
-			var T1x = enemyTanks[tankNumber].x;
-			var T1y = enemyTanks[tankNumber].y;
-			
-			var T2x = enemyTanks[tankNumber].x + Ax;
-			var T2y = enemyTanks[tankNumber].y + Ay;
-			
-			var T3x = enemyTanks[tankNumber].x + Bx;
-			var T3y = enemyTanks[tankNumber].y + By;
 
 			
 			// go ahead and move if you can
@@ -390,38 +329,6 @@ body {
 
 			}
 
-/*			
-			switch (enemyTanks[tankNumber].heading) {
-			case 1:
-				enemyTanks[tankNumber].x += 5;
-				if (enemyTanks[tankNumber].x > (ctx.canvas.width - 50)) {
-					enemyTanks[tankNumber].heading = 2;
-				}
-				break;
-
-			case 2:
-				enemyTanks[tankNumber].y -= 5;
-				if (enemyTanks[tankNumber].y < 50) {
-					enemyTanks[tankNumber].heading = 3;
-				}
-				break;
-
-			case 3:
-				enemyTanks[tankNumber].x -= 5;
-				if (enemyTanks[tankNumber].x < 50) {
-					enemyTanks[tankNumber].heading = 4;
-				}
-				break;
-
-			case 4:
-				enemyTanks[tankNumber].y += 5;
-				if (enemyTanks[tankNumber].y > (ctx.canvas.height - 50)) {
-					enemyTanks[tankNumber].heading = 1;
-				}
-				break;
-
-			}
-*/
 			//console.log("gun width: "+enemyTankGun.width+", height: "+enemyTankGun.height);
 			// gun width: 72, height: 42
 
@@ -443,7 +350,7 @@ body {
 			ctx.drawImage(enemyTankGun, -20, -22);
 			ctx.restore();
 			
-/*
+
 			// show our gunRange and scanRange
 			// scan range
 		    ctx.beginPath();
@@ -460,20 +367,9 @@ body {
 		    ctx.lineWidth = 5;
 		    ctx.strokeStyle = 'red';
 		    ctx.stroke();
-
-		    // collision range
-		    ctx.beginPath();
-		    // context.arc(x, y, radius, startAngle, endAngle, anticlockwise);
-		    ctx.arc(enemyTanks[tankNumber].x, enemyTanks[tankNumber].y, 20 * 4 , 0, 2 * Math.PI, false);
-		    ctx.lineWidth = 5;
-		    ctx.strokeStyle = 'blue';
-		    ctx.stroke();
-			*/
-
-		}
 		
 		// Draw the target (Player) tank
-		drawRotatedImage(playerTank.vehicleImage, playerTank.x, playerTank.y, 0, ctx);
+		drawRotatedImage(playerTank.vehicleImage, playerTank.x, playerTank.y, playerTank.heading, ctx);
 		// Draw the target (Player) tank turret
 		ctx.save();
 		ctx.translate(playerTank.x, playerTank.y);
@@ -481,12 +377,6 @@ body {
 		ctx.drawImage(playerTankGun, -20, -22);
 		ctx.restore();
 		
-		// Draw the hypothetical projected point
-	    ctx.beginPath();
-	    ctx.arc(hypoX, hypoY, 5 , 0, 2 * Math.PI, false);
-	    ctx.lineWidth = 5;
-	    ctx.strokeStyle = 'red';
-	    ctx.stroke();
 
 	    // Draw the enemy tank's actual X,Y co-ordinate point
 	    ctx.beginPath();
@@ -494,7 +384,7 @@ body {
 	    ctx.lineWidth = 5;
 	    ctx.strokeStyle = 'yellow';
 	    ctx.stroke();
-
+		}
 	    // Draw the player tank's actual X,Y co-ordinate point
 	    ctx.beginPath();
 	    ctx.arc(playerTank.x, playerTank.y, 5 , 0, 2 * Math.PI, false);
@@ -505,23 +395,6 @@ body {
 	    // Draw bounding boxes
 	    
 	    ctx.strokeRect(playerTank.x - 40, playerTank.y - 34, 76, 74)
-	    
-		// Draw the collision rectangle
-		// CQ = enemyTanks[tankNumber].velocity * 10;
-	    // QA = 1/2 tank width or 30 roughly
-
-	    /*
-		console.log("Triangle:  T1x, T1y   T2x,T2y  T3x,T3y "+T1x+" , "+T1y+"  "+T2x+" , "+T2y+"  "+T3x+" , "+T3y);
-
-		
-		ctx.moveTo(T1x, T1y);
-		ctx.lineTo(T2x, T2y);
-		ctx.lineTo(T3x, T3y);
-		ctx.closePath();
-		ctx.stroke();
-*/
-
-
 	}
 
 	function drawRotatedImage(image, x, y, angle, ctx) {
@@ -573,7 +446,7 @@ body {
 		
 	</script>
 
-	<canvas id="my_canvas" width="1280" height="512"></canvas>
+	<canvas id="my_canvas" width="1500" height="1500"></canvas>
 
 
 </body>
