@@ -46,7 +46,7 @@ body {
 		// X location, Y location,  Direction (heading), Velocity, damage (health)
 		// a graphic image
 		// and an Id?
-		this.x = 0, this.y = 0, this.heading = 0, this.health = 100,
+		this.x = 0, this.y = 0, this.heading = 0, this.health = 100, this.lastVelocity = 0;
 				this.id = 0, this.velocity = 0, this.lastCollision = "None";
 		this.vehicleImage = new Image();
 	}
@@ -129,10 +129,6 @@ body {
 
 		
 		// create a bunch of enemy tanks
-		// 0 = right
-		// 90 = up
-		// 180 = left
-		// 270 = down
 
 			var urlNumTanks = GetUrlValue("numTanks");
 			if (urlNumTanks != undefined) {
@@ -141,21 +137,32 @@ body {
 				urlNumTanks = 4;
 			}
 
-		
+		var nextX = 250;
+		var nextY = 100;
+		var placed = 0;
 		for (var tankCounter = 1; tankCounter <= urlNumTanks; tankCounter++) {
 			// Spawn a new enemy tank, and assign it's id
 			var newEnemyTankObject = new EnemyTankClass(tankCounter);
 			// assign initial X and Y co-ords
 			// randomize them anywhere on the canvas - minus a 100 pix border
-			newEnemyTankObject.x = Math.floor(Math.random()
-					* (ctx.canvas.width - 100)) + 1;
-			newEnemyTankObject.y = Math.floor(Math.random()
-					* (ctx.canvas.height - 100)) + 1;
+			placed +=1;
+			if (placed == 8) {
+				nextY += 200;
+				nextX = 100;
+				placed = 0;
+			} else {
+				nextX += 200;
+			}
+			newEnemyTankObject.x = nextX;
+			newEnemyTankObject.y = nextY;
+			
 			// randomize an initial heading
 			newEnemyTankObject.heading = (Math.floor(Math.random() * 360) ) ;
 			// randomize an initial velocity 1 - 5
 			newEnemyTankObject.velocity = (Math.floor(Math.random() * 3) + 2 );
-			
+
+			newEnemyTankObject.velocity = 6;
+
 			// add this new tank to our array
 			enemyTanks.push(newEnemyTankObject);
 			console.log("Added tank " + tankCounter + " added to the array");
@@ -173,10 +180,20 @@ body {
 		playerTank.heading = Math.floor(Math.random() * 4) + 1;
 
 		// collision testing using enemy tank #1
-		playerTank.x = 350;
-		playerTank.y = 250;
+		
+		// 0 E
+		// 45 S/E
+		// 90 S
+		// 135 S/W
+		// 180  W
+		// 225 NW
+		// 270  N
+		// 315 N/E
+		
+		playerTank.x = 100;
+		playerTank.y = 100;
 		playerTank.velocity = 0;
-		playerTank.heading = 45;
+		playerTank.heading = 315;
 		
 		// how many enemy tanks in the array?
 		console.log("Size of enemy tank array: " + enemyTanks.length);
@@ -233,24 +250,36 @@ body {
 				// hit the west wall - reverse direction
 				//enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
 				// Math.floor(Math.random() * 2) + 1
+				console.log("Tank: "+tankNumber+" About to hit left wall - heading: "+enemyTanks[tankNumber].heading)
+						console.log("Attempting to stop animation");
+						clearInterval(animateInterval);  // stop the animation loop
 				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
 			}
 				
 			if (hypoX > (ctx.canvas.width - 10))  {
 				// hit the east wall - reverse direction
 				//enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
+				console.log("Tank: "+tankNumber+" About to hit right wall - heading: "+enemyTanks[tankNumber].heading)
+						console.log("Attempting to stop animation");
+						clearInterval(animateInterval);  // stop the animation loop
 				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
 			}
 			
 			if ( hypoY < 10 ) {
 				// hit the north wall - reverse direction
 				//enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
+				console.log("Tank: "+tankNumber+" About to hit top wall - heading: "+enemyTanks[tankNumber].heading)
+						console.log("Attempting to stop animation");
+						clearInterval(animateInterval);  // stop the animation loop
 				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
 			}
 				
 			if (hypoY > (ctx.canvas.height - 10))  {
 				// hit the south wall - reverse direction, and place tank away from the wall.
 				//enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
+				console.log("Tank: "+tankNumber+" About to hit bottom wall - heading: "+enemyTanks[tankNumber].heading)
+						console.log("Attempting to stop animation");
+						clearInterval(animateInterval);  // stop the animation loop
 				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
 			}
 			
@@ -300,20 +329,31 @@ body {
 					collisionResult =  willCollide(Ax, Ay, Bx, By, boundBoxX, boundBoxY);
 					var savedResult = collisionResult;
 					console.log("collisionResult vs eTank "+checkTank+" is: "+collisionResult);
-					// does this tank have an already pending collision event active?
-					console.log("Current .lastCollision: "+enemyTanks[checkTank].lastCollision);
-					if (enemyTanks[checkTank].lastCollision != "None" ) {
-						// yes it does - override our result with our previous direction directive
-						collisionResult = enemyTanks[checkTank].lastCollision;
+					
+					// is this a non collision?
+					if (collisionResult != "None") {
+						// yes - we have a collision detection event
+						// does this tank have an already pending collision event active?
+						console.log("Current .lastCollision: "+enemyTanks[tankNumber].lastCollision);
+						if (enemyTanks[tankNumber].lastCollision != "None" ) {
+							// yes it does - override our result with our previous direction directive
+							collisionResult = enemyTanks[tankNumber].lastCollision;
+							console.log("override collisionResult to: "+enemyTanks[tankNumber].lastCollision);
+						} else {
+							// not it does not, so store our current avoidance direction
+							// note - if the current result is "None", this effectively resets our lastCollision flag
+							enemyTanks[tankNumber].lastCollision = collisionResult;
+							console.log("here, collisionResult = "+collisionResult);
+							console.log(".lastCollision is now: "+enemyTanks[tankNumber].lastCollision);
+						}
 					} else {
-						// not it does not, so store our current avoidance direction
-						// note - if the current result is "None", this effectively resets our lastCollision flag
-						enemyTanks[checkTank].lastCollision = collisionResult;
+						// no collision detected, reset .lastCollision to 'None'
+						enemyTanks[tankNumber].lastCollision = "None";
 					}
 					
 					if (savedResult == "None" && collisionResult != "None") {
 						console.log("just now saved collisionResult: "+collisionResult);
-						console.log(".lastCollision: "+enemyTanks[checkTank].lastCollision);
+						console.log(".lastCollision: "+enemyTanks[tankNumber].lastCollision);
 						console.log("Attempting to stop animation");
 						clearInterval(animateInterval);  // stop the animation loop
 						
@@ -347,9 +387,29 @@ body {
 			boundBoxX = playerTank.x - 40;
 			boundBoxY = playerTank.y - 34;
 			// check for possible collision with the player tank
-			console.log("collision check vs player tank");
+			console.log("collision check vs player tank by tank: "+tankNumber);
 			collisionResult = willCollide(Ax, Ay, Bx, By, boundBoxX, boundBoxY);
 			console.log("collisionResult vs playerTank is: "+collisionResult);
+			// is this a non collision?
+			if (collisionResult != "None") {
+				// yes - we have a collision detection event
+				// does this tank have an already pending collision event active?
+				console.log("Current .lastCollision: "+enemyTanks[tankNumber].lastCollision);
+				if (enemyTanks[tankNumber].lastCollision != "None" ) {
+					// yes it does - override our result with our previous direction directive
+					collisionResult = enemyTanks[tankNumber].lastCollision;
+					console.log("override collisionResult to: "+enemyTanks[tankNumber].lastCollision);
+				} else {
+					// not it does not, so store our current avoidance direction
+					// note - if the current result is "None", this effectively resets our lastCollision flag
+					enemyTanks[tankNumber].lastCollision = collisionResult;
+					console.log("here, collisionResult = "+collisionResult);
+					console.log(".lastCollision is now: "+enemyTanks[tankNumber].lastCollision);
+				}
+			} else {
+				// no collision detected, reset .lastCollision to 'None'
+				enemyTanks[tankNumber].lastCollision = "None";
+			}
 
 			if (collisionResult == "Left") {
 				// adjust tank heading to the right
