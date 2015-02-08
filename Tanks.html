@@ -402,6 +402,16 @@ body {
 					// is this a non collision?
 					if (collisionResult != "None") {
 						// yes - we have a collision detection event
+						if (enemyTanks[tankNumber].velocity > 0) {
+							// do we have a current saved velocity?
+							if (enemyTanks[tankNumber].savedVelocity == 0) {
+								// no - so save our current
+								enemyTanks[tankNumber].savedVelocity = enemyTanks[tankNumber].velocity;
+								// stop all movement until the collision event is cleared
+								enemyTanks[tankNumber].velocity = -.5;
+								}
+						}
+
 						// does this tank have an already pending collision event active?
 						console.log("Current .lastCollision: "+enemyTanks[tankNumber].lastCollision);
 						if (enemyTanks[tankNumber].lastCollision != "None" ) {
@@ -418,14 +428,12 @@ body {
 					} else {
 						// no collision detected, reset .lastCollision to 'None'
 						enemyTanks[tankNumber].lastCollision = "None";
-					}
-					
-					if (savedResult == "None" && collisionResult != "None") {
-						console.log("just now saved collisionResult: "+collisionResult);
-						console.log(".lastCollision: "+enemyTanks[tankNumber].lastCollision);
-						console.log("Attempting to stop animation");
-						clearInterval(animateInterval);  // stop the animation loop
-						
+						// No - resume traveling
+						if (enemyTanks[tankNumber].savedVelocity > 0) {
+							enemyTanks[tankNumber].velocity = enemyTanks[tankNumber].savedVelocity;
+							enemyTanks[tankNumber].savedVelocity = 0;
+						}
+
 					}
 					
 					if (collisionResult == "Left") {
