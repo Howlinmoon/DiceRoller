@@ -46,7 +46,7 @@ body {
 		// X location, Y location,  Direction (heading), Velocity, damage (health)
 		// a graphic image
 		// and an Id?
-		this.x = 0, this.y = 0, this.heading = 0, this.health = 100, this.lastVelocity = 0;
+		this.x = 0, this.y = 0, this.heading = 0, this.health = 100, this.savedVelocity = 0;
 				this.id = 0, this.velocity = 0, this.lastCollision = "None";
 		this.vehicleImage = new Image();
 	}
@@ -230,7 +230,12 @@ body {
 		var collisionResult = "None";
 		
 		for (var tankNumber = 0; tankNumber < enemyTanks.length; tankNumber++) {
-			//enemyTanks[tankNumber].heading = angle;
+			// keep our heading < 360 and > 0
+			if (enemyTanks[tankNumber].heading > 360 ) {
+				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 360;
+			} else if (enemyTanks[tankNumber].heading < 0) {
+				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 360;
+			}
 			console.log("Tank number: "+tankNumber+", current heading: "+enemyTanks[tankNumber].heading+", Behavior: "+enemyTanks[tankNumber].behavior);
 			console.log("Tank Velocity: "+enemyTanks[tankNumber].velocity);
 			
@@ -246,49 +251,113 @@ body {
 			//console.log("Actual X,Y: "+enemyTanks[tankNumber].x+" , "+enemyTanks[tankNumber].y);			
 			
 			// will it hit a wall?
+			console.log("Checking for wall collisions");
+			var hittingWall = false;
 			if ( hypoX < 10 ) {
-				// hit the west wall - reverse direction
-				//enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
-				// Math.floor(Math.random() * 2) + 1
-				console.log("Tank: "+tankNumber+" About to hit left wall - heading: "+enemyTanks[tankNumber].heading)
-						console.log("Attempting to stop animation");
-						clearInterval(animateInterval);  // stop the animation loop
-				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+				// hit the West wall
+				console.log("Tank: "+tankNumber+" About to hit Left wall - heading: "+enemyTanks[tankNumber].heading);
+				hittingWall = true;
+				if (enemyTanks[tankNumber].velocity > 0) {
+					// do we have a current saved velocity?
+					if (enemyTanks[tankNumber].savedVelocity == 0) {
+						// no - so save our current
+						enemyTanks[tankNumber].savedVelocity = enemyTanks[tankNumber].velocity;
+						// stop all movement until the collision event is cleared
+						enemyTanks[tankNumber].velocity = 0;
+					}
+				}
+				// determine which direction makes the most sense to turn
+				if ( enemyTanks[tankNumber].heading < 180) {
+					// turn to the left 22.5 degrees
+					enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
+				} else {
+					// turn to the right
+					enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+				}
 			}
 				
 			if (hypoX > (ctx.canvas.width - 10))  {
-				// hit the east wall - reverse direction
-				//enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
-				console.log("Tank: "+tankNumber+" About to hit right wall - heading: "+enemyTanks[tankNumber].heading)
-						console.log("Attempting to stop animation");
-						clearInterval(animateInterval);  // stop the animation loop
-				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
+				// hit the East wall
+				console.log("Tank: "+tankNumber+" About to hit Right wall - heading: "+enemyTanks[tankNumber].heading);
+				hittingWall = true;
+				if (enemyTanks[tankNumber].velocity > 0) {
+					// do we have a current saved velocity?
+					if (enemyTanks[tankNumber].savedVelocity == 0) {
+						// no - so save our current
+						enemyTanks[tankNumber].savedVelocity = enemyTanks[tankNumber].velocity;
+						// stop all movement until the collision event is cleared
+						enemyTanks[tankNumber].velocity = 0;
+					}
+				}
+				// determine which direction makes the most sense to turn
+				if ( enemyTanks[tankNumber].heading > 270) {
+					// turn to the left 22.5 degrees
+					enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
+				} else {
+					// turn to the right
+					enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+				}
 			}
 			
 			if ( hypoY < 10 ) {
-				// hit the north wall - reverse direction
-				//enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
-				console.log("Tank: "+tankNumber+" About to hit top wall - heading: "+enemyTanks[tankNumber].heading)
-						console.log("Attempting to stop animation");
-						clearInterval(animateInterval);  // stop the animation loop
-				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+				// hit the north wall
+				console.log("Tank: "+tankNumber+" About to hit top wall - heading: "+enemyTanks[tankNumber].heading);
+				hittingWall = true;
+				if (enemyTanks[tankNumber].velocity > 0) {
+					// do we have a current saved velocity?
+					if (enemyTanks[tankNumber].savedVelocity == 0) {
+						// no - so save our current
+						enemyTanks[tankNumber].savedVelocity = enemyTanks[tankNumber].velocity;
+						// stop all movement until the collision event is cleared
+						enemyTanks[tankNumber].velocity = 0;
+					}
+				}
+				// determine which direction makes the most sense to turn
+				if ( enemyTanks[tankNumber].heading < 270) {
+					// turn to the left 22.5 degrees
+					enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
+				} else {
+					// turn to the right
+					enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+				}
 			}
 				
 			if (hypoY > (ctx.canvas.height - 10))  {
-				// hit the south wall - reverse direction, and place tank away from the wall.
-				//enemyTanks[tankNumber].velocity = -enemyTanks[tankNumber].velocity;
-				console.log("Tank: "+tankNumber+" About to hit bottom wall - heading: "+enemyTanks[tankNumber].heading)
-						console.log("Attempting to stop animation");
-						clearInterval(animateInterval);  // stop the animation loop
-				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
+				// hit the south wall
+				console.log("Tank: "+tankNumber+" About to hit bottom wall - heading: "+enemyTanks[tankNumber].heading);
+				hittingWall = true;
+				if (enemyTanks[tankNumber].velocity > 0) {
+					// do we have a current saved velocity?
+					if (enemyTanks[tankNumber].savedVelocity == 0) {
+						// no - so save our current
+						enemyTanks[tankNumber].savedVelocity = enemyTanks[tankNumber].velocity;
+						// stop all movement until the collision event is cleared
+						enemyTanks[tankNumber].velocity = 0;
+					}
+				}
+				// determine which direction makes the most sense to turn
+				if ( enemyTanks[tankNumber].heading < 90) {
+					// turn to the left 22.5 degrees
+					enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
+				} else {
+					// turn to the right
+					enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+				}
 			}
 			
-			// did we go over 360?
-			if (enemyTanks[tankNumber].heading > 360 ) {
-				// add the other displacement direction
-				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 360;
+			// do we have an ongoing wall collision event?
+			if (! hittingWall) {
+				console.log("No wall collision detected");
+				// No - resume traveling
+				if (enemyTanks[tankNumber].savedVelocity > 0) {
+					enemyTanks[tankNumber].velocity = enemyTanks[tankNumber].savedVelocity;
+					enemyTanks[tankNumber].savedVelocity = 0;
+				}
+			} else {
+				console.log("Ongoing wall collision event");
 			}
-
+			
+			
 			
 			// will it hit another tank?  note - we now might be in risk of backing into one to avoid a wall!
 			// run through all of the current enemy tanks
