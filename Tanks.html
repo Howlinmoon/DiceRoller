@@ -248,12 +248,17 @@ body {
 			var playerCollision = false;
 			var friendlyCollision = false;
 			
+			// reset our wall flags to false
+			var collideTop = false;
+			var collideBottom = false;
+			var collideLeft = false;
+			var collideRight = false;
+			
 			// determine if forward progress will hit an object
 			// start with the walls
 			// compute our new hypothetical X,Y if we continue in this direction at our current speed
 			// enemyTanks[tankNumber].velocity = 20;
-//			var hypoX = enemyTanks[tankNumber].x + Math.cos(enemyTanks[tankNumber].heading * TO_RADIANS) *  enemyTanks[tankNumber].velocity * 10;
-//			var hypoY = enemyTanks[tankNumber].y + Math.sin(enemyTanks[tankNumber].heading * TO_RADIANS)  * enemyTanks[tankNumber].velocity * 10;
+
 			// using the current velocity as a range determination does not work when we reduce the speed to zero,
 			// that effectively blinds the tank to the current wall - and allows it to proceed
 			// instead, we will attempt to use a fixed range of 60.
@@ -264,81 +269,151 @@ body {
 			console.log("Hypothetical X,Y: "+hypoX+" , "+hypoY);
 			//console.log("Actual X,Y: "+enemyTanks[tankNumber].x+" , "+enemyTanks[tankNumber].y);			
 			
-			// will it hit a wall?
+			
+			// upperAngle is for point Ax,Ay
+			var upperAngle = (enemyTanks[tankNumber].heading - 18) * TO_RADIANS;
+			// lowerAngle is for point Bx,By
+			var lowerAngle = (enemyTanks[tankNumber].heading + 18) * TO_RADIANS;
+			
+			// Assume a detection distance of 75, this seems to work good
+			var distR =75;
+			
+			var Ax = distR * Math.cos(upperAngle) + enemyTanks[tankNumber].x;
+			var Ay = distR * Math.sin(upperAngle) + enemyTanks[tankNumber].y;
+			
+			var Bx = distR * Math.cos(lowerAngle) + enemyTanks[tankNumber].x;
+			var By = distR * Math.sin(lowerAngle) + enemyTanks[tankNumber].y;
+
+			// try doing wall detection with our feelers
 			console.log("Checking for wall collisions");
-			if ( hypoX < 10 ) {
+			if ( Ax < 10 || Bx < 10 ) {
 				// hit the West wall
 				console.log("Tank: "+tankNumber+" About to hit Left wall - heading: "+enemyTanks[tankNumber].heading);
-				callCollisionl = true;
-				if (enemyTanks[tankNumber].velocity > 0) {
-					// do we have a current saved velocity?
-					if (enemyTanks[tankNumber].savedVelocity == 0) {
-						// no - so save our current
-						enemyTanks[tankNumber].savedVelocity = enemyTanks[tankNumber].velocity;
-						// stop all movement until the collision event is cleared
-						enemyTanks[tankNumber].velocity = -.5;
-					}
-				}
-				// determine which direction makes the most sense to turn
-				if ( enemyTanks[tankNumber].heading < 180) {
-					// turn to the left 22.5 degrees
-					enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
-				} else {
-					// turn to the right
-					enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
-				}
+				wallCollision = true;
+				collideLeft = true;
 			}
-				
-			if (hypoX > (ctx.canvas.width - 10))  {
+
+			if (Ax  > (ctx.canvas.width - 10)  || Bx  > (ctx.canvas.width - 10) )  {
 				// hit the East wall
 				console.log("Tank: "+tankNumber+" About to hit Right wall - heading: "+enemyTanks[tankNumber].heading);
 				wallCollision = true;
-				if (enemyTanks[tankNumber].velocity > 0) {
-					// do we have a current saved velocity?
-					if (enemyTanks[tankNumber].savedVelocity == 0) {
-						// no - so save our current
-						enemyTanks[tankNumber].savedVelocity = enemyTanks[tankNumber].velocity;
-						// stop all movement until the collision event is cleared
-						enemyTanks[tankNumber].velocity = -.5;
-					}
-				}
-				// determine which direction makes the most sense to turn
-				if ( enemyTanks[tankNumber].heading > 270) {
-					// turn to the left 22.5 degrees
-					enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
-				} else {
-					// turn to the right
-					enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
-				}
+				collideRight = true;
 			}
 			
-			if ( hypoY < 10 ) {
+			if ( Ay < 10 || By < 10) {
 				// hit the north wall
 				console.log("Tank: "+tankNumber+" About to hit top wall - heading: "+enemyTanks[tankNumber].heading);
 				wallCollision = true;
-				if (enemyTanks[tankNumber].velocity > 0) {
-					// do we have a current saved velocity?
-					if (enemyTanks[tankNumber].savedVelocity == 0) {
-						// no - so save our current
-						enemyTanks[tankNumber].savedVelocity = enemyTanks[tankNumber].velocity;
-						// stop all movement until the collision event is cleared
-						enemyTanks[tankNumber].velocity = -.5;
-					}
-				}
-				// determine which direction makes the most sense to turn
-				if ( enemyTanks[tankNumber].heading < 270) {
-					// turn to the left 22.5 degrees
-					enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
-				} else {
-					// turn to the right
-					enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
-				}
+				collideTop = true;
 			}
-				
-			if (hypoY > (ctx.canvas.height - 10))  {
+
+			if (Ay > (ctx.canvas.height - 10)  || By  > (ctx.canvas.height - 10) )  {
 				// hit the south wall
 				console.log("Tank: "+tankNumber+" About to hit bottom wall - heading: "+enemyTanks[tankNumber].heading);
 				wallCollision = true;
+				collideBottom = true;
+			}
+			
+			if (wallCollision) {
+				console.log("one or more walls about to be hit");
+				// colliding with one or two walls - we'll assume you can't collide with three for now (!)
+				if (collideBottom) {
+					if (!collideLeft && !collideRight) {
+						console.log("solo bottom collision");
+						// this means it's a straight up bottom collision - so we'll turn to evade
+						// determine which direction makes the most sense to turn
+						if ( enemyTanks[tankNumber].heading < 90) {
+							// turn to the left 22.5 degrees
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						} else {
+							// turn to the right
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+//							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						}
+					} else {
+						// this means, it's a combo bottom collision - corner collision
+						if (collideLeft) {
+							console.log("bottom left corner collision");
+							// bottom left corner - our response to this will be a hard coded right turn
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						} else {
+							console.log("bottom right corner collision");
+							// must be bottom right cornet - so hard coded left turn is called for
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						}
+					}
+				}
+				
+				// ok - next we check for a Top collision
+				if (collideTop) {
+					if (!collideLeft && !collideRight) {
+						console.log("solo top collision");
+						// this means it's a straight up top collision - so we'll turn to evade
+						// determine which direction makes the most sense to turn
+						if ( enemyTanks[tankNumber].heading < 270) {
+							// turn to the left 22.5 degrees
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						} else {
+							// turn to the right
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						}
+					} else {
+						// this means, it's a combo bottom collision - corner collision
+						if (collideLeft) {
+							console.log("top left collision");
+							// top left corner - our response to this will be a hard coded right turn
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						} else {
+							console.log("top right collision");
+							// must be top right corner - so hard coded left turn is called for
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						}
+					}
+				}
+				
+				// ok - next we check for a Left collision
+				if (collideLeft) {
+					if (!collideTop && !collideBottom) {
+						console.log("solo left collision");
+						// this means it's a straight up Left collision - so we'll turn to evade
+						// determine which direction makes the most sense to turn
+						if ( enemyTanks[tankNumber].heading < 180) {
+							// turn to the left 22.5 degrees
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						} else {
+							// turn to the right
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						}
+					} else {
+						// this means, it's a combo bottom collision - corner collision
+						// this is already handled previously by top or bottom - so we do NOTHING
+					}
+				}
+				
+				// finally - we check for a Right collision
+				if (collideRight) {
+					if (!collideTop && !collideBottom) {
+						console.log("solo right collision");
+						// this means it's a straight up Right collision - so we'll turn to evade
+						// determine which direction makes the most sense to turn
+						if ( enemyTanks[tankNumber].heading > 270) {
+							// turn to the left 22.5 degrees
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						} else {
+							// turn to the right
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						}
+					} else {
+						// this means, it's a combo bottom collision - corner collision
+						// this is already handled previously by top or bottom - so we do NOTHING
+					}
+				}
+			}
+			
+			// End of individual wall direction checks
+			
+			// do we have an ongoing wall collision event?
+			if (wallCollision) {
 				if (enemyTanks[tankNumber].velocity > 0) {
 					// do we have a current saved velocity?
 					if (enemyTanks[tankNumber].savedVelocity == 0) {
@@ -348,20 +423,10 @@ body {
 						enemyTanks[tankNumber].velocity = -.5;
 					}
 				}
-				// determine which direction makes the most sense to turn
-				if ( enemyTanks[tankNumber].heading < 90) {
-					// turn to the left 22.5 degrees
-					enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
-				} else {
-					// turn to the right
-					enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
-				}
-			}
-			
-			// do we have an ongoing wall collision event?
-			if (wallCollision) {
-				console.log("Ongoing wall collision event - attempting to stop tank");
-				enemyTanks[tankNumber].velocity = -.5;
+				console.log("Ongoing wall collision event - attempting to reverse tank slowly");
+				enemyTanks[tankNumber].velocity = -6;
+			} else {
+				console.log("No wall collision at this time for tank: "+tankNumber);
 			}
 			
 			
@@ -372,23 +437,10 @@ body {
 			var Cx = enemyTanks[tankNumber].x;
 			var Cy = enemyTanks[tankNumber].y;
 			
-			// upperAngle is for point Ax,Ay
-			var upperAngle = (enemyTanks[tankNumber].heading - 18) * TO_RADIANS;
-			// lowerAngle is for point Bx,By
-			var lowerAngle = (enemyTanks[tankNumber].heading + 18) * TO_RADIANS;
-			
-			// Assume a distance of 100
-			var distR =100;
-			
-			var Ax = distR * Math.cos(upperAngle) + enemyTanks[tankNumber].x;
-			var Ay = distR * Math.sin(upperAngle) + enemyTanks[tankNumber].y;
-			
-			var Bx = distR * Math.cos(lowerAngle) + enemyTanks[tankNumber].x;
-			var By = distR * Math.sin(lowerAngle) + enemyTanks[tankNumber].y;
 
 			var boundBoxX, boundBoxY;
 			
-			console.log("About to check for collisions with other enemy tanks");
+			//console.log("About to check for collisions with other enemy tanks");
 			for (var checkTank = 0; checkTank <enemyTanks.length; checkTank++ ) {
 				if (checkTank != tankNumber) {
 					// we don't check for collisions with ourself!
@@ -404,7 +456,7 @@ body {
 					// check for possible collision
 					collisionResult =  willCollide(Ax, Ay, Bx, By, boundBoxX, boundBoxY);
 					var savedResult = collisionResult;
-					console.log("collisionResult vs eTank "+checkTank+" is: "+collisionResult);
+					//console.log("collisionResult vs eTank "+checkTank+" is: "+collisionResult);
 					
 					// is this a collision event?
 					if (collisionResult != "None") {
@@ -421,11 +473,11 @@ body {
 						}
 
 						// does this tank have an already pending collision event active?
-						console.log("Current .lastCollision: "+enemyTanks[tankNumber].lastCollision);
+						//console.log("Current .lastCollision: "+enemyTanks[tankNumber].lastCollision);
 						if (enemyTanks[tankNumber].lastCollision != "None" ) {
 							// yes it does - override our result with our previous direction directive
 							collisionResult = enemyTanks[tankNumber].lastCollision;
-							console.log("override collisionResult to: "+enemyTanks[tankNumber].lastCollision);
+							//console.log("override collisionResult to: "+enemyTanks[tankNumber].lastCollision);
 //							console.log("Attempting to stop animation");
 //							clearInterval(animateInterval);  // stop the animation loop
 
@@ -433,8 +485,8 @@ body {
 							// no it does not, so store our current avoidance direction
 							// note - if the current result is "None", this effectively resets our lastCollision flag
 							enemyTanks[tankNumber].lastCollision = collisionResult;
-							console.log("here, collisionResult = "+collisionResult);
-							console.log(".lastCollision is now: "+enemyTanks[tankNumber].lastCollision);
+							//console.log("here, collisionResult = "+collisionResult);
+							//console.log(".lastCollision is now: "+enemyTanks[tankNumber].lastCollision);
 						}
 					} else {
 						// no collision detected, reset .lastCollision to 'None'
@@ -536,7 +588,7 @@ body {
 		    ctx.strokeStyle = "blue";
 		    ctx.stroke();
 			
-			console.log("Player Tank Direction and Velocity: "+playerTank.heading+" , "+playerTank.velocity);
+			//console.log("Player Tank Direction and Velocity: "+playerTank.heading+" , "+playerTank.velocity);
 			
 			
 
@@ -668,7 +720,7 @@ body {
 		
 	</script>
 
-	<canvas id="my_canvas" width="1200" height="300"></canvas>
+	<canvas id="my_canvas" width="1500" height="1500"></canvas>
 	<div id="controls">
 		<button id="stop_button">STOP!</button>
 	</div>
