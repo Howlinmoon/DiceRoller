@@ -72,7 +72,12 @@ function willCollide(Ax, Ay, Bx, By, boundBoxX, boundBoxY) {
 	
 	if (ACollided && BCollided) {
 		// BOTH whiskers detected
-		collisionResult = "Both";
+		// in this case, we randomize a result
+		if  ( (Math.floor(Math.random() * 2) + 1) == 1) {
+			collisionResult = "Left";
+		} else {
+			collisionResult = "Right";
+		}
 	}
 
 	return collisionResult;
