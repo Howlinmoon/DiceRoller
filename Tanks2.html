@@ -1,0 +1,751 @@
+<!doctype html>
+<html>
+<head>
+<meta charset=utf-8>
+<title>Tanks - Tile Style</title>
+<style>
+body {
+	margin: 40px;
+	background: #666;
+}
+
+#my_canvas {
+	background: #fff;
+	border: #000 1px solid;
+}
+</style>
+
+<script src="willCollide.js"></script>
+
+<script>
+	var enemyTankBase = new Image();
+	enemyTankBase.src = "graphics/ETankBottom/Default/000.png";
+	var enemyTankGun = new Image();
+	enemyTankGun.src = "graphics/ETankTop/Default/000.png";
+
+	var playerTankBase = new Image();
+	playerTankBase.src = "graphics/TankBottom/Default/000.png";
+	var playerTankGun = new Image();
+	playerTankGun.src = "graphics/TankTop/Default/000.png";
+
+	var backgroundImage = new Image();
+	backgroundImage.src = "graphics/tiledbackground.png";
+
+	var TO_RADIANS = Math.PI / 180;
+	var animateInterval;
+	
+	// declare an array to hold a bunch of enemy tank objects
+	var enemyTanks = [];
+	
+	// make our player tank global also
+	var playerTank;
+
+	// This class is for all entities that move around the map
+	function VehicleClass() {
+		// Vehicles have these common properties:
+		// X location, Y location,  Direction (heading), Velocity, damage (health)
+		// a graphic image
+		// and an Id?
+		this.x = 0, this.y = 0, this.heading = 0, this.health = 100, this.savedVelocity = 0;
+				this.id = 0, this.velocity = 0, this.lastCollision = "None";
+		this.vehicleImage = new Image();
+	}
+
+	// establish a class for the Tanks
+
+	function TankClass() {
+		// the tanks require these additional properties:
+		// direction of  turret
+		// gun ammo,  mine ammo
+		// current target X,Y
+		// target acquired true/false
+		this.turretDir = 0, this.gunAmmo = 100, this.mines = 10,
+				this.targetX = 0, this.targetY = 0, this.targetAcquired = false;
+		this.gunRange = 150, this.scanRange = 200;
+		this.tankMethod = function tankMethod(arg1) {
+			return arg1 + " Tank Method reporting for duty - ID: " + this.id;
+		}
+	}
+
+	// Establish a class for enemy tanks
+	function EnemyTankClass(arg1) {
+		// enemy tanks require these additional properties:
+		// a graphic image, a behavior
+		this.vehicleImage = enemyTankBase, this.behavior = "wallFollow";
+		this.enemyTankMethod = function enemyTankMethod(arg1) {
+			return arg1 + "Enemy Tank Method reporting for duty - ID: "
+					+ this.id;
+		}
+		// assign the passed Id to the tank
+		this.id = arg1;
+	}
+
+	// Establish a class for player tanks
+	function PlayerTankClass(arg1) {
+		// player tanks require these additional properties:
+		// a graphic image
+		this.vehicleImage = playerTankBase
+		this.playerTankMethod = function playerTankMethod(arg1) {
+			return arg1 + "Player Tank Method reporting for duty - ID: "
+					+ this.id;
+		}
+		// assign the passed Id to the tank
+		this.id = arg1;
+	}
+
+	
+	
+	// Make the child class inherit all of the parent class characteristics
+	// by using the prototype property
+
+	// First, we make the tank class inherit the base vehicle class
+	TankClass.prototype = new VehicleClass();
+
+	// Next, we make the enemy tank class inherit the base tank class
+	EnemyTankClass.prototype = new TankClass;
+
+	// At this point, the following should create a new enemy tank object:
+	var enemyTank1 = new EnemyTankClass('666');
+
+	// Attempt to verify the classes are working correctly
+	console.log("enemyTank1 - checking EnemyTankClass behavior property: "
+			+ enemyTank1.behavior);
+	console.log("enemyTank1 - calling the EnemyTankClass enemyTankMethod: "
+			+ enemyTank1.enemyTankMethod(' sample data '));
+	console.log("enemyTank1 - Displaying how many mines are available: "
+			+ enemyTank1.mines);
+	console.log("enemyTank1 - calling tankMethod with argument '999' "
+			+ enemyTank1.tankMethod('999'));
+
+	var angle = 0;
+	var ctx = 0;
+
+	function InitGame() {
+		ctx = document.getElementById('my_canvas').getContext('2d');
+		console.log(ctx.canvas.id + " | " + ctx.canvas.width + " | "
+				+ ctx.canvas.height);
+
+		var stop_button   = document.getElementById('stop_button');
+		
+		// the world - width and height is defined by canvas width/height divided by 75
+		var worldWidth  =  Math.floor(ctx.canvas.width / 75);
+		var worldHeight =  Math.floor(ctx.canvas.height / 75);
+		
+		var world = [[]];
+		// initialize the world to empty
+		for (var x=0; x < worldWidth; x++) {
+			world[x] = [];
+
+			for (var y=0; y < worldHeight; y++) {
+				world[x][y] = 0;
+				// except for the edges - we'll override that with our wall marker - 99
+				world[0][y] = 99;
+				world[0][worldHeight] = 99;
+				world[x][0] = 99;
+				world[x][worldWidth] = 99;
+			}
+		}
+		
+		// create a bunch of enemy tanks
+
+			var urlNumTanks = GetUrlValue("numTanks");
+			if (urlNumTanks != undefined) {
+				console.log("Use Specified number of tanks: "+urlNumTanks);
+			} else {
+				urlNumTanks = 2;
+			}
+
+		for (var tankCounter = 1; tankCounter <= urlNumTanks; tankCounter++) {
+			// Spawn a new enemy tank, and assign it's id
+			var newEnemyTankObject = new EnemyTankClass(tankCounter);
+			// assign initial X and Y co-ords
+			// attempt to keep a 3 tile buffer around the map
+			var keepRolling = true;
+			while (keepRolling) {
+				var randomX = Math.floor(Math.random() * (worldWidth - 3) + 3);
+				var randomY = Math.floor(Math.random() * (worldHeight - 3) + 3);
+				if (world[randomX][randomY] == 0) {
+					// this is a good spot to place a tank
+					keepRolling = false;
+					newEnemyTankObject.x = randomX;
+					newEnemyTankObject.y = randomY;
+					// indicate that this seat is taken
+					world[randomX][randomY] = 1;
+				}
+			}
+			
+			// randomize an initial heading
+			newEnemyTankObject.heading = (Math.floor(Math.random() * 360) ) ;
+			newEnemyTankObject.velocity = 6;
+
+			// add this new tank to our array
+			enemyTanks.push(newEnemyTankObject);
+			console.log("Enemy tank " + tankCounter + " added to the array");
+		}
+		
+		// adjust enemy tanks 0 & 1 to face at each other
+		enemyTanks[0].heading = 0;
+		enemyTanks[1].heading = 180;
+		
+		// create a single target tank
+		playerTank = new PlayerTankClass(1);
+		// assign initial X and Y co-ords
+		// attempt to keep a 3 tile buffer around the map
+		var keepRolling = true;
+		while (keepRolling) {
+			var randomX = Math.floor(Math.random() * (worldWidth - 3) + 3);
+			var randomY = Math.floor(Math.random() * (worldHeight - 3) + 3);
+			if (world[randomX][randomY] == 0) {
+				// this is a good spot to place a tank
+				keepRolling = false;
+				playerTank.x = randomX;
+				playerTank.y = randomY;
+				// indicate that this seat is taken
+				world[randomX][randomY] = 1;
+			}
+		}
+
+		playerTank.heading = Math.floor(Math.random() * 360);
+
+		// 0 E
+		// 45 S/E
+		// 90 S
+		// 135 S/W
+		// 180  W
+		// 225 NW
+		// 270  N
+		// 315 N/E
+		
+		playerTank.velocity = 0;
+		playerTank.heading = 315;
+		
+		// how many enemy tanks in the array?
+		console.log("Size of enemy tank array: " + enemyTanks.length);
+
+		animateInterval = setInterval(animate, 100);
+		//setInterval("animate()", 100);
+		
+		// stop button mouse down
+		stop_button.addEventListener('mousedown', function (event) {
+			console.log("Attempting to stop animation");
+			clearInterval(animateInterval);  // stop the animation loop
+			});
+
+
+	}
+
+	function animate() {
+		// Draw the background
+		var ptrn = ctx.createPattern(backgroundImage, 'repeat'); // Create a pattern with this image, and set it to "repeat".
+		// save the state of the context
+		ctx.save();
+		ctx.fillStyle = ptrn;
+		ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height); // context.fillRect(x, y, width, height);
+		// restore the state
+		ctx.restore();
+
+		// increment our global angle
+		angle += 10;
+		if (angle > 360) {
+			angle = 0;
+		}
+
+		// var to store our collision result
+		var collisionResult = "None";
+		
+		for (var tankNumber = 0; tankNumber < enemyTanks.length; tankNumber++) {
+			// keep our heading < 360 and > 0
+			if (enemyTanks[tankNumber].heading > 360 ) {
+				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 360;
+			} else if (enemyTanks[tankNumber].heading < 0) {
+				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 360;
+			}
+			console.log("Tank number: "+tankNumber+", current heading: "+enemyTanks[tankNumber].heading+", Behavior: "+enemyTanks[tankNumber].behavior);
+			console.log("Tank Velocity: "+enemyTanks[tankNumber].velocity);
+			
+			// reset our three collision flags to all false
+			var wallCollision = false;
+			var playerCollision = false;
+			var friendlyCollision = false;
+			
+			// reset our wall flags to false
+			var collideTop = false;
+			var collideBottom = false;
+			var collideLeft = false;
+			var collideRight = false;
+			
+			// determine if forward progress will hit an object
+			// start with the walls
+			// compute our new hypothetical X,Y if we continue in this direction at our current speed
+			// enemyTanks[tankNumber].velocity = 20;
+
+			// using the current velocity as a range determination does not work when we reduce the speed to zero,
+			// that effectively blinds the tank to the current wall - and allows it to proceed
+			// instead, we will attempt to use a fixed range of 60.
+			var hypoX = enemyTanks[tankNumber].x + Math.cos(enemyTanks[tankNumber].heading * TO_RADIANS) *  60;
+			var hypoY = enemyTanks[tankNumber].y + Math.sin(enemyTanks[tankNumber].heading * TO_RADIANS)  * 60;
+			
+			
+			console.log("Hypothetical X,Y: "+hypoX+" , "+hypoY);
+			//console.log("Actual X,Y: "+enemyTanks[tankNumber].x+" , "+enemyTanks[tankNumber].y);			
+			
+			
+			// upperAngle is for point Ax,Ay
+			var upperAngle = (enemyTanks[tankNumber].heading - 18) * TO_RADIANS;
+			// lowerAngle is for point Bx,By
+			var lowerAngle = (enemyTanks[tankNumber].heading + 18) * TO_RADIANS;
+			
+			// Assume a detection distance of 75, this seems to work good
+			var distR =75;
+			
+			var Ax = distR * Math.cos(upperAngle) + enemyTanks[tankNumber].x;
+			var Ay = distR * Math.sin(upperAngle) + enemyTanks[tankNumber].y;
+			
+			var Bx = distR * Math.cos(lowerAngle) + enemyTanks[tankNumber].x;
+			var By = distR * Math.sin(lowerAngle) + enemyTanks[tankNumber].y;
+
+			// try doing wall detection with our feelers
+			console.log("Checking for wall collisions");
+			if ( Ax < 10 || Bx < 10 ) {
+				// hit the West wall
+				console.log("Tank: "+tankNumber+" About to hit Left wall - heading: "+enemyTanks[tankNumber].heading);
+				wallCollision = true;
+				collideLeft = true;
+			}
+
+			if (Ax  > (ctx.canvas.width - 10)  || Bx  > (ctx.canvas.width - 10) )  {
+				// hit the East wall
+				console.log("Tank: "+tankNumber+" About to hit Right wall - heading: "+enemyTanks[tankNumber].heading);
+				wallCollision = true;
+				collideRight = true;
+			}
+			
+			if ( Ay < 10 || By < 10) {
+				// hit the north wall
+				console.log("Tank: "+tankNumber+" About to hit top wall - heading: "+enemyTanks[tankNumber].heading);
+				wallCollision = true;
+				collideTop = true;
+			}
+
+			if (Ay > (ctx.canvas.height - 10)  || By  > (ctx.canvas.height - 10) )  {
+				// hit the south wall
+				console.log("Tank: "+tankNumber+" About to hit bottom wall - heading: "+enemyTanks[tankNumber].heading);
+				wallCollision = true;
+				collideBottom = true;
+			}
+			
+			if (wallCollision) {
+				console.log("one or more walls about to be hit");
+				// colliding with one or two walls - we'll assume you can't collide with three for now (!)
+				if (collideBottom) {
+					if (!collideLeft && !collideRight) {
+						console.log("solo bottom collision");
+						// this means it's a straight up bottom collision - so we'll turn to evade
+						// determine which direction makes the most sense to turn
+						if ( enemyTanks[tankNumber].heading < 90) {
+							// turn to the left 22.5 degrees
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						} else {
+							// turn to the right
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+//							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						}
+					} else {
+						// this means, it's a combo bottom collision - corner collision
+						if (collideLeft) {
+							console.log("bottom left corner collision");
+							// bottom left corner - our response to this will be a hard coded right turn
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						} else {
+							console.log("bottom right corner collision");
+							// must be bottom right cornet - so hard coded left turn is called for
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						}
+					}
+				}
+				
+				// ok - next we check for a Top collision
+				if (collideTop) {
+					if (!collideLeft && !collideRight) {
+						console.log("solo top collision");
+						// this means it's a straight up top collision - so we'll turn to evade
+						// determine which direction makes the most sense to turn
+						if ( enemyTanks[tankNumber].heading < 270) {
+							// turn to the left 22.5 degrees
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						} else {
+							// turn to the right
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						}
+					} else {
+						// this means, it's a combo bottom collision - corner collision
+						if (collideLeft) {
+							console.log("top left collision");
+							// top left corner - our response to this will be a hard coded right turn
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						} else {
+							console.log("top right collision");
+							// must be top right corner - so hard coded left turn is called for
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						}
+					}
+				}
+				
+				// ok - next we check for a Left collision
+				if (collideLeft) {
+					if (!collideTop && !collideBottom) {
+						console.log("solo left collision");
+						// this means it's a straight up Left collision - so we'll turn to evade
+						// determine which direction makes the most sense to turn
+						if ( enemyTanks[tankNumber].heading < 180) {
+							// turn to the left 22.5 degrees
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						} else {
+							// turn to the right
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						}
+					} else {
+						// this means, it's a combo bottom collision - corner collision
+						// this is already handled previously by top or bottom - so we do NOTHING
+					}
+				}
+				
+				// finally - we check for a Right collision
+				if (collideRight) {
+					if (!collideTop && !collideBottom) {
+						console.log("solo right collision");
+						// this means it's a straight up Right collision - so we'll turn to evade
+						// determine which direction makes the most sense to turn
+						if ( enemyTanks[tankNumber].heading > 270) {
+							// turn to the left 22.5 degrees
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						} else {
+							// turn to the right
+							enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+						}
+					} else {
+						// this means, it's a combo bottom collision - corner collision
+						// this is already handled previously by top or bottom - so we do NOTHING
+					}
+				}
+			}
+			
+			// End of individual wall direction checks
+			
+			// do we have an ongoing wall collision event?
+			if (wallCollision) {
+				if (enemyTanks[tankNumber].velocity > 0) {
+					// do we have a current saved velocity?
+					if (enemyTanks[tankNumber].savedVelocity == 0) {
+						// no - so save our current
+						enemyTanks[tankNumber].savedVelocity = enemyTanks[tankNumber].velocity;
+						// stop all movement until the collision event is cleared
+						enemyTanks[tankNumber].velocity = -.5;
+					}
+				}
+				console.log("Ongoing wall collision event - attempting to reverse tank slowly");
+				enemyTanks[tankNumber].velocity = -6;
+			} else {
+				console.log("No wall collision at this time for tank: "+tankNumber);
+			}
+			
+			
+			
+			// will it hit another tank?  note - we now might be in risk of backing into one to avoid a wall!
+			// run through all of the current enemy tanks
+			
+			var Cx = enemyTanks[tankNumber].x;
+			var Cy = enemyTanks[tankNumber].y;
+			
+
+			var boundBoxX, boundBoxY;
+			
+			//console.log("About to check for collisions with other enemy tanks");
+			for (var checkTank = 0; checkTank <enemyTanks.length; checkTank++ ) {
+				if (checkTank != tankNumber) {
+					// we don't check for collisions with ourself!
+					
+					// create our bounding box
+					boundBoxX = enemyTanks[checkTank].x - 35;
+					boundBoxY = enemyTanks[checkTank].y - 35;
+					
+					// Draw the current target tank bounding box
+					ctx.strokeRect(boundBoxX, boundBoxY, 76, 74)
+
+
+					// check for possible collision
+					collisionResult =  willCollide(Ax, Ay, Bx, By, boundBoxX, boundBoxY);
+					var savedResult = collisionResult;
+					//console.log("collisionResult vs eTank "+checkTank+" is: "+collisionResult);
+					
+					// is this a collision event?
+					if (collisionResult != "None") {
+						friendlyCollision = true;
+						// yes - we have a collision detection event
+						if (enemyTanks[tankNumber].velocity > 0) {
+							// do we have a current saved velocity?
+							if (enemyTanks[tankNumber].savedVelocity == 0) {
+								// no - so save our current
+								enemyTanks[tankNumber].savedVelocity = enemyTanks[tankNumber].velocity;
+								// stop all movement until the collision event is cleared
+								enemyTanks[tankNumber].velocity = -.5;
+								}
+						}
+
+						// does this tank have an already pending collision event active?
+						//console.log("Current .lastCollision: "+enemyTanks[tankNumber].lastCollision);
+						if (enemyTanks[tankNumber].lastCollision != "None" ) {
+							// yes it does - override our result with our previous direction directive
+							collisionResult = enemyTanks[tankNumber].lastCollision;
+							//console.log("override collisionResult to: "+enemyTanks[tankNumber].lastCollision);
+//							console.log("Attempting to stop animation");
+//							clearInterval(animateInterval);  // stop the animation loop
+
+						} else {
+							// no it does not, so store our current avoidance direction
+							// note - if the current result is "None", this effectively resets our lastCollision flag
+							enemyTanks[tankNumber].lastCollision = collisionResult;
+							//console.log("here, collisionResult = "+collisionResult);
+							//console.log(".lastCollision is now: "+enemyTanks[tankNumber].lastCollision);
+						}
+					} else {
+						// no collision detected, reset .lastCollision to 'None'
+						enemyTanks[tankNumber].lastCollision = "None";
+					}
+					
+					if (collisionResult == "Left") {
+						// adjust tank heading to the right
+						enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+					}
+
+					if (collisionResult == "Right") {
+						// adjust tank heading to the left
+						enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
+					}
+				}	
+			}	
+			
+			
+/*
+			
+			
+			// check for collision against the player tank
+			boundBoxX = playerTank.x - 40;
+			boundBoxY = playerTank.y - 34;
+			// check for possible collision with the player tank
+			console.log("collision check vs player tank by tank: "+tankNumber);
+			collisionResult = willCollide(Ax, Ay, Bx, By, boundBoxX, boundBoxY);
+			console.log("collisionResult vs playerTank is: "+collisionResult);
+			// is this a non collision?
+			if (collisionResult != "None") {
+				// yes - we have a collision detection event
+				// does this tank have an already pending collision event active?
+				console.log("Current .lastCollision: "+enemyTanks[tankNumber].lastCollision);
+				if (enemyTanks[tankNumber].lastCollision != "None" ) {
+					// yes it does - override our result with our previous direction directive
+					collisionResult = enemyTanks[tankNumber].lastCollision;
+					console.log("override collisionResult to: "+enemyTanks[tankNumber].lastCollision);
+				} else {
+					// not it does not, so store our current avoidance direction
+					// note - if the current result is "None", this effectively resets our lastCollision flag
+					enemyTanks[tankNumber].lastCollision = collisionResult;
+					console.log("here, collisionResult = "+collisionResult);
+					console.log(".lastCollision is now: "+enemyTanks[tankNumber].lastCollision);
+				}
+			} else {
+				// no collision detected, reset .lastCollision to 'None'
+				enemyTanks[tankNumber].lastCollision = "None";
+			}
+
+			if (collisionResult == "Left") {
+				// adjust tank heading to the right
+				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+			}
+
+			if (collisionResult == "Right") {
+				// adjust tank heading to the left
+				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
+			}
+			
+			if (collisionResult == "Both") {
+				// randomly adjust the tank heading
+				if  ( (Math.floor(Math.random() * 2) + 1) == 1) {
+					enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 22.5;
+				} else {
+					enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 22.5;
+				}
+			}
+*/			
+
+			// Here - if all collision flags are false - we can resume moving.
+			if (! wallCollision && ! playerCollision && ! friendlyCollision ) {
+				console.log("No collision events for tank "+tankNumber+" resuming movement");
+				if (enemyTanks[tankNumber].savedVelocity > 0) {
+					enemyTanks[tankNumber].velocity = enemyTanks[tankNumber].savedVelocity;
+					enemyTanks[tankNumber].savedVelocity = 0;
+				}
+			}
+
+			// Draw the scanning triangle
+		    ctx.strokeStyle = "yellow";
+			ctx.moveTo(Cx, Cy);
+			ctx.lineTo(Ax, Ay);
+			ctx.lineTo(Bx, By);
+			ctx.closePath();
+			ctx.stroke();
+			
+			// Draw point A
+		    ctx.beginPath();
+		    ctx.arc(Ax, Ay, 5 , 0, 2 * Math.PI, false);
+		    ctx.lineWidth = 5;
+		    ctx.strokeStyle = "red";
+		    ctx.stroke();
+
+			// Draw point B
+		    ctx.beginPath();
+		    ctx.arc(Bx, By, 5 , 0, 2 * Math.PI, false);
+		    ctx.lineWidth = 5;
+		    ctx.strokeStyle = "blue";
+		    ctx.stroke();
+			
+			//console.log("Player Tank Direction and Velocity: "+playerTank.heading+" , "+playerTank.velocity);
+			
+			
+
+			
+			// go ahead and move if you can
+			if (enemyTanks[tankNumber].velocity != 0) {
+				enemyTanks[tankNumber].x = enemyTanks[tankNumber].x += Math.cos(enemyTanks[tankNumber].heading * TO_RADIANS) * enemyTanks[tankNumber].velocity;
+				enemyTanks[tankNumber].y = enemyTanks[tankNumber].y += Math.sin(enemyTanks[tankNumber].heading * TO_RADIANS) * enemyTanks[tankNumber].velocity;
+
+			}
+
+			//console.log("gun width: "+enemyTankGun.width+", height: "+enemyTankGun.height);
+			// gun width: 72, height: 42
+
+			drawRotatedImage(enemyTanks[tankNumber].vehicleImage,
+					enemyTanks[tankNumber].x, enemyTanks[tankNumber].y,
+					enemyTanks[tankNumber].heading , ctx);
+			// and the gun - always point it at the center of the map
+			// var angleDeg = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
+			var centerX = ctx.canvas.width / 2;
+			var centerY = ctx.canvas.height / 2;
+			var gunAngle = Math.atan2(centerY - enemyTanks[tankNumber].y,
+					centerX - enemyTanks[tankNumber].x)
+					* 180 / Math.PI;
+
+			//		drawRotatedImage(enemyTankGun, eTankX +gunXd, eTankY+gunYd, gunAngle, ctx);
+			ctx.save();
+			ctx.translate(enemyTanks[tankNumber].x, enemyTanks[tankNumber].y);
+			ctx.rotate(gunAngle * Math.PI / 180);
+			ctx.drawImage(enemyTankGun, -20, -22);
+			ctx.restore();
+			
+
+			// show our gunRange and scanRange
+			// scan range
+		    ctx.beginPath();
+		    ctx.arc(enemyTanks[tankNumber].x, enemyTanks[tankNumber].y, enemyTanks[tankNumber].scanRange, 0, 2 * Math.PI, false);
+//		    ctx.fillStyle = 'green';
+//		    ctx.fill();
+		    ctx.lineWidth = 5;
+		    ctx.strokeStyle = 'green';
+		    ctx.stroke();
+
+		    // gun range
+		    ctx.beginPath();
+		    ctx.arc(enemyTanks[tankNumber].x, enemyTanks[tankNumber].y, enemyTanks[tankNumber].gunRange, 0, 2 * Math.PI, false);
+		    ctx.lineWidth = 5;
+		    ctx.strokeStyle = 'red';
+		    ctx.stroke();
+		
+		// Draw the target (Player) tank
+		drawRotatedImage(playerTank.vehicleImage, playerTank.x, playerTank.y, playerTank.heading, ctx);
+		// Draw the target (Player) tank turret
+		ctx.save();
+		ctx.translate(playerTank.x, playerTank.y);
+		ctx.rotate(angle * Math.PI / 180);
+		ctx.drawImage(playerTankGun, -20, -22);
+		ctx.restore();
+		
+
+	    // Draw the enemy tank's actual X,Y co-ordinate point
+	    ctx.beginPath();
+	    ctx.arc(enemyTanks[0].x, enemyTanks[0].y, 5 , 0, 2 * Math.PI, false);
+	    ctx.lineWidth = 5;
+	    ctx.strokeStyle = 'yellow';
+	    ctx.stroke();
+		}
+	    // Draw the player tank's actual X,Y co-ordinate point
+	    ctx.beginPath();
+	    ctx.arc(playerTank.x, playerTank.y, 5 , 0, 2 * Math.PI, false);
+	    ctx.lineWidth = 5;
+	    ctx.strokeStyle = 'yellow';
+	    ctx.stroke();
+	    
+	    // Draw bounding boxes
+	    
+	    ctx.strokeRect(playerTank.x - 40, playerTank.y - 34, 76, 74)
+	}
+
+	function drawRotatedImage(image, x, y, angle, ctx) {
+
+		// save the current co-ordinate system 
+		// before we screw with it
+		ctx.save();
+
+		// move to the middle of where we want to draw our image
+		ctx.translate(x, y);
+
+		// rotate around that point, converting our 
+		// angle from degrees to radians 
+		ctx.rotate(angle * TO_RADIANS);
+
+		// draw it up and to the left by half the width
+		// and height of the image 
+		ctx.drawImage(image, -(image.width / 2), -(image.height / 2));
+
+		// and restore the co-ords to how they were when we began
+		ctx.restore();
+	}
+
+	function randomNumber(min, max) {
+		return Math.floor(Math.random() * (max - min)) + min;
+	}
+	
+	function GetUrlValue(VarSearch){
+	    var SearchString = window.location.search.substring(1);
+	    var VariableArray = SearchString.split('&');
+	    for(var i = 0; i < VariableArray.length; i++){
+	        var KeyValuePair = VariableArray[i].split('=');
+	        if(KeyValuePair[0] == VarSearch){
+	            return KeyValuePair[1];
+	        }
+	    }
+	}
+
+	window.addEventListener('load', function(event) {
+		InitGame();
+	});
+	
+
+	
+</script>
+
+</head>
+
+<body>
+
+	<script>
+		
+	</script>
+
+	<canvas id="my_canvas" width="1500" height="1500"></canvas>
+	<div id="controls">
+		<button id="stop_button">STOP!</button>
+	</div>
+
+
+</body>
+</html>
+
