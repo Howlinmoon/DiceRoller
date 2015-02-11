@@ -56,6 +56,21 @@ body {
 		this.x = 0, this.y = 0, this.heading = 0, this.health = 100, this.savedVelocity = 0;
 				this.id = 0, this.velocity = 0, this.lastCollision = "None";
 		this.vehicleImage = new Image();
+		this.Xconversion = 75;
+		this.Yconversion = 75;
+		
+		// create a method to translate array co-ords to real world (canvas) co-ords
+		this.cvX = function cvX() {
+			// convert from the array X to the real world X
+			var convertedX = this.x * this.Xconversion;
+			return convertedX;
+		}
+		
+		this.cvY = function cvY() {
+			// convert from the array Y to the real world Y
+			return this.y * this.Yconversion;
+		}
+
 	}
 
 	// establish a class for the Tanks
@@ -110,6 +125,10 @@ body {
 
 	// Next, we make the enemy tank class inherit the base tank class
 	EnemyTankClass.prototype = new TankClass;
+	
+	// Make the player class inherit from the TankClass also!
+	PlayerTankClass.prototype = new TankClass;
+	
 
 	// At this point, the following should create a new enemy tank object:
 	var enemyTank1 = new EnemyTankClass('666');
@@ -139,22 +158,29 @@ body {
 		worldHeight =  Math.floor(ctx.canvas.height / 75);
 
 
-		
+		console.log("World is: worldWidth x worldHeight: "+worldWidth+" x "+worldHeight);
+		var xLimit = worldWidth - 1;
+		var yLimit = worldHeight - 1;
 		// initialize the world to empty
+		// first, we need to initialize the array of arrays
 		for (var x=0; x < worldWidth; x++) {
 			world[x] = [];
-
+		}
+		// now we can initialize the contents to empty (0)
+		for (var x = 0; x < worldWidth; x++) {
 			for (var y=0; y < worldHeight; y++) {
 				world[x][y] = 0;
+				
 				// except for the edges - we'll override that with our wall marker - 99
-				world[0][y] = 99;
-				world[0][worldHeight] = 99;
-				world[x][0] = 99;
-				world[x][worldWidth] = 99;
+				world[0][y] = 99; // left edge
+				world[x][yLimit] = 99; // top
+				world[x][0] = 99; // bottom
+				world[xLimit][y] = 99; // right
 			}
 		}
 		
-		console.log("World is: worldWidth x worldHeight: "+worldWidth+" x "+worldHeight);
+		
+		
 		
 		// create a bunch of enemy tanks
 
@@ -186,6 +212,7 @@ body {
 			
 			// randomize an initial heading
 			newEnemyTankObject.heading = (Math.floor(Math.random() * 360) ) ;
+			// trying to find a velocity that doesn't warp the tank off the map instantly.
 			newEnemyTankObject.velocity = 1;
 
 			// add this new tank to our array
@@ -273,8 +300,10 @@ body {
 				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 360;
 			}
 			console.log("Tank number: "+tankNumber+", current heading: "+enemyTanks[tankNumber].heading+", Behavior: "+enemyTanks[tankNumber].behavior);
-			console.log("Tank Velocity: "+enemyTanks[tankNumber].velocity);
-			
+			console.log("Tank Velocity: "+enemyTanks[tankNumber].velocity+"  X , Y : "+enemyTanks[tankNumber].x+" , "+enemyTanks[tankNumber].y);
+			console.log("cvX , cvY : "+enemyTanks[tankNumber].cvX()+" , "+enemyTanks[tankNumber].cvY());
+			//console.log(tankNumber+" calling tankMethod with argument '999' "+enemyTanks[tankNumber].tankMethod('999'));
+
 			// reset our three collision flags to all false
 			var wallCollision = false;
 			var playerCollision = false;
@@ -307,6 +336,9 @@ body {
 			try {
 				if (world[hypoX][hypoY] != 0) {
 					console.log("Can't proceed forward, tile is occupied by: "+world[hypoX][hypoY]);
+					// randomize anotherl heading
+					enemyTanks[tankNumber].heading = (Math.floor(Math.random() * 360) ) ;
+
 				} else {
 					console.log("Proceeding forward");
 					// claim the spot
@@ -333,19 +365,19 @@ body {
 			// gun width: 72, height: 42
 
 			drawRotatedImage(enemyTanks[tankNumber].vehicleImage,
-					enemyTanks[tankNumber].x * 75, enemyTanks[tankNumber].y * 75,
+					enemyTanks[tankNumber].cvX(), enemyTanks[tankNumber].cvY(),
 					enemyTanks[tankNumber].heading , ctx);
 			// and the gun - always point it at the center of the map
 			// var angleDeg = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
 			var centerX = ctx.canvas.width / 2;
 			var centerY = ctx.canvas.height / 2;
-			var gunAngle = Math.atan2(centerY - enemyTanks[tankNumber].y * 75,
-					centerX - enemyTanks[tankNumber].x * 75)
+			var gunAngle = Math.atan2(centerY - enemyTanks[tankNumber].cvY(),
+					centerX - enemyTanks[tankNumber].cvX)
 					* 180 / Math.PI;
 
 			//		drawRotatedImage(enemyTankGun, eTankX +gunXd, eTankY+gunYd, gunAngle, ctx);
 			ctx.save();
-			ctx.translate(enemyTanks[tankNumber].x * 75, enemyTanks[tankNumber].y * 75);
+			ctx.translate(enemyTanks[tankNumber].cvX(), enemyTanks[tankNumber].cvY());
 			ctx.rotate(gunAngle * Math.PI / 180);
 			ctx.drawImage(enemyTankGun, -20, -22);
 			ctx.restore();
@@ -354,23 +386,24 @@ body {
 			// show our gunRange and scanRange
 			// scan range
 		    ctx.beginPath();
-		    ctx.arc(enemyTanks[tankNumber].x * 75, enemyTanks[tankNumber].y * 75, enemyTanks[tankNumber].scanRange, 0, 2 * Math.PI, false);
+		    ctx.arc(enemyTanks[tankNumber].cvX(), enemyTanks[tankNumber].cvY(), enemyTanks[tankNumber].scanRange, 0, 2 * Math.PI, false);
 		    ctx.lineWidth = 5;
 		    ctx.strokeStyle = 'green';
 		    ctx.stroke();
 
 		    // gun range
 		    ctx.beginPath();
-		    ctx.arc(enemyTanks[tankNumber].x * 75, enemyTanks[tankNumber].y * 75, enemyTanks[tankNumber].gunRange, 0, 2 * Math.PI, false);
+		    ctx.arc(enemyTanks[tankNumber].cvX(), enemyTanks[tankNumber].cvY(), enemyTanks[tankNumber].gunRange, 0, 2 * Math.PI, false);
 		    ctx.lineWidth = 5;
 		    ctx.strokeStyle = 'red';
 		    ctx.stroke();
 		}
 		// Draw the target (Player) tank
-		drawRotatedImage(playerTank.vehicleImage, playerTank.x * 75, playerTank.y * 75, playerTank.heading, ctx);
+		console.log("Player Tank adjusted X: "+playerTank.cvX());
+		drawRotatedImage(playerTank.vehicleImage, playerTank.cvX(), playerTank.cvY(), playerTank.heading, ctx);
 		// Draw the target (Player) tank turret
 		ctx.save();
-		ctx.translate(playerTank.x * 75, playerTank.y * 75);
+		ctx.translate(playerTank.cvX(), playerTank.cvY());
 		ctx.rotate(angle * Math.PI / 180);
 		ctx.drawImage(playerTankGun, -20, -22);
 		ctx.restore();
