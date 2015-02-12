@@ -31,21 +31,19 @@ body {
 
 	var TO_RADIANS = Math.PI / 180;
 	var animateInterval;
-	
+
 	// declare an array to hold a bunch of enemy tank objects
 	var enemyTanks = [];
-	
+
 	// make our player tank global also
 	var playerTank;
-	
+
 	// our global tile array
-	var world = [[]];
-	
+	var world = [ [] ];
+
 	// the world - width and height is defined by canvas width/height divided by 75
-	var worldWidth  = 0;
-	var worldHeight =  0;
-
-
+	var worldWidth = 0;
+	var worldHeight = 0;
 
 	// This class is for all entities that move around the map
 	function VehicleClass() {
@@ -53,19 +51,20 @@ body {
 		// X location, Y location,  Direction (heading), Velocity, damage (health)
 		// a graphic image
 		// and an Id?
-		this.x = 0, this.y = 0, this.heading = 0, this.health = 100, this.savedVelocity = 0;
-				this.id = 0, this.velocity = 0, this.lastCollision = "None";
+		this.x = 0, this.y = 0, this.heading = 0, this.health = 100,
+				this.savedVelocity = 0;
+		this.id = 0, this.velocity = 0, this.lastCollision = "None";
 		this.vehicleImage = new Image();
 		this.Xconversion = 75;
 		this.Yconversion = 75;
-		
+
 		// create a method to translate array co-ords to real world (canvas) co-ords
 		this.cvX = function cvX() {
 			// convert from the array X to the real world X
 			var convertedX = this.x * this.Xconversion;
 			return convertedX;
 		}
-		
+
 		this.cvY = function cvY() {
 			// convert from the array Y to the real world Y
 			return this.y * this.Yconversion;
@@ -115,8 +114,6 @@ body {
 		this.id = arg1;
 	}
 
-	
-	
 	// Make the child class inherit all of the parent class characteristics
 	// by using the prototype property
 
@@ -125,23 +122,9 @@ body {
 
 	// Next, we make the enemy tank class inherit the base tank class
 	EnemyTankClass.prototype = new TankClass;
-	
+
 	// Make the player class inherit from the TankClass also!
 	PlayerTankClass.prototype = new TankClass;
-	
-
-	// At this point, the following should create a new enemy tank object:
-	var enemyTank1 = new EnemyTankClass('666');
-
-	// Attempt to verify the classes are working correctly
-	console.log("enemyTank1 - checking EnemyTankClass behavior property: "
-			+ enemyTank1.behavior);
-	console.log("enemyTank1 - calling the EnemyTankClass enemyTankMethod: "
-			+ enemyTank1.enemyTankMethod(' sample data '));
-	console.log("enemyTank1 - Displaying how many mines are available: "
-			+ enemyTank1.mines);
-	console.log("enemyTank1 - calling tankMethod with argument '999' "
-			+ enemyTank1.tankMethod('999'));
 
 	var angle = 0;
 	var ctx = 0;
@@ -151,26 +134,26 @@ body {
 		console.log(ctx.canvas.id + " | " + ctx.canvas.width + " | "
 				+ ctx.canvas.height);
 
-		var stop_button   = document.getElementById('stop_button');
+		var stop_button = document.getElementById('stop_button');
 
 		// the world - width and height is defined by canvas width/height divided by 75
-		worldWidth  =  Math.floor(ctx.canvas.width / 75);
-		worldHeight =  Math.floor(ctx.canvas.height / 75);
+		worldWidth = Math.floor(ctx.canvas.width / 75);
+		worldHeight = Math.floor(ctx.canvas.height / 75);
 
-
-		console.log("World is: worldWidth x worldHeight: "+worldWidth+" x "+worldHeight);
+		console.log("World is: worldWidth x worldHeight: " + worldWidth + " x "
+				+ worldHeight);
 		var xLimit = worldWidth - 1;
 		var yLimit = worldHeight - 1;
 		// initialize the world to empty
 		// first, we need to initialize the array of arrays
-		for (var x=0; x < worldWidth; x++) {
+		for (var x = 0; x < worldWidth; x++) {
 			world[x] = [];
 		}
 		// now we can initialize the contents to empty (0)
 		for (var x = 0; x < worldWidth; x++) {
-			for (var y=0; y < worldHeight; y++) {
+			for (var y = 0; y < worldHeight; y++) {
 				world[x][y] = 0;
-				
+
 				// except for the edges - we'll override that with our wall marker - 99
 				world[0][y] = 99; // left edge
 				world[x][yLimit] = 99; // top
@@ -178,19 +161,24 @@ body {
 				world[xLimit][y] = 99; // right
 			}
 		}
-		
-		
-		
-		
+
 		// create a bunch of enemy tanks
 
-			var urlNumTanks = GetUrlValue("numTanks");
-			if (urlNumTanks != undefined) {
-				console.log("Use Specified number of tanks: "+urlNumTanks);
-			} else {
-				urlNumTanks = 2;
-			}
+		var urlNumTanks = GetUrlValue("numTanks");
+		if (urlNumTanks != undefined) {
+			console.log("Use Specified number of tanks: " + urlNumTanks);
+		} else {
+			urlNumTanks = 2;
+		}
 
+		var urlTankAngle = GetUrlValue("tankAngle");
+		if (urlTankAngle != undefined) {
+			console.log("Use Specified angle for tank 0: " + urlTankAngle);
+		} else {
+			urlTankAngle = -1;
+		}
+
+		
 		for (var tankCounter = 1; tankCounter <= urlNumTanks; tankCounter++) {
 			// Spawn a new enemy tank, and assign it's id
 			var newEnemyTankObject = new EnemyTankClass(tankCounter);
@@ -200,6 +188,8 @@ body {
 			while (keepRolling) {
 				var randomX = Math.floor(Math.random() * (worldWidth - 3) + 3);
 				var randomY = Math.floor(Math.random() * (worldHeight - 3) + 3);
+				randomX = 10;
+				randomY = 10;
 				if (world[randomX][randomY] == 0) {
 					// this is a good spot to place a tank
 					keepRolling = false;
@@ -209,9 +199,14 @@ body {
 					world[randomX][randomY] = 1;
 				}
 			}
-			
-			// randomize an initial heading
-			newEnemyTankObject.heading = (Math.floor(Math.random() * 360) ) ;
+
+			if (urlTankAngle != -1) {
+				newEnemyTankObject.heading = urlTankAngle
+			} else {
+				// randomize an initial heading
+				// for simplicity, try using multiples of 22.5 only 
+				newEnemyTankObject.heading = (Math.floor(Math.random() * 16) * 22.5);
+			}
 			// trying to find a velocity that doesn't warp the tank off the map instantly.
 			newEnemyTankObject.velocity = 1;
 
@@ -219,11 +214,11 @@ body {
 			enemyTanks.push(newEnemyTankObject);
 			console.log("Enemy tank " + tankCounter + " added to the array");
 		}
-		
+
 		// adjust enemy tanks 0 & 1 to face at each other
-		enemyTanks[0].heading = 0;
-		enemyTanks[1].heading = 180;
-		
+		//enemyTanks[0].heading = 0;
+		//enemyTanks[1].heading = 180;
+
 		// create a single target tank
 		playerTank = new PlayerTankClass(1);
 		// assign initial X and Y co-ords
@@ -252,23 +247,20 @@ body {
 		// 225 NW
 		// 270  N
 		// 315 N/E
-		
+
 		playerTank.velocity = 0;
 		playerTank.heading = 315;
-		
+
 		// how many enemy tanks in the array?
 		console.log("Size of enemy tank array: " + enemyTanks.length);
 
-		animateInterval = setInterval(animate, 100);
-		//setInterval("animate()", 100);
-		
+		animateInterval = setInterval(animate, 30);
+
 		// stop button mouse down
-		stop_button.addEventListener('mousedown', function (event) {
+		stop_button.addEventListener('mousedown', function(event) {
 			console.log("Attempting to stop animation");
-			clearInterval(animateInterval);  // stop the animation loop
-			});
-
-
+			clearInterval(animateInterval); // stop the animation loop
+		});
 	}
 
 	function animate() {
@@ -280,93 +272,95 @@ body {
 		ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height); // context.fillRect(x, y, width, height);
 		// restore the state
 		ctx.restore();
-		
+
 		// increment our global angle
 		angle += 10;
 		if (angle > 360) {
 			angle = 0;
 		}
-		
-		console.log("world[0][0] = "+world[0][0]);
 
-		// var to store our collision result
-		var collisionResult = "None";
-		
 		for (var tankNumber = 0; tankNumber < enemyTanks.length; tankNumber++) {
 			// keep our heading < 360 and > 0
-			if (enemyTanks[tankNumber].heading > 360 ) {
+			if (enemyTanks[tankNumber].heading > 360) {
 				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading - 360;
 			} else if (enemyTanks[tankNumber].heading < 0) {
 				enemyTanks[tankNumber].heading = enemyTanks[tankNumber].heading + 360;
 			}
-			console.log("Tank number: "+tankNumber+", current heading: "+enemyTanks[tankNumber].heading+", Behavior: "+enemyTanks[tankNumber].behavior);
-			console.log("Tank Velocity: "+enemyTanks[tankNumber].velocity+"  X , Y : "+enemyTanks[tankNumber].x+" , "+enemyTanks[tankNumber].y);
-			console.log("cvX , cvY : "+enemyTanks[tankNumber].cvX()+" , "+enemyTanks[tankNumber].cvY());
+			console.log("Tank number: " + tankNumber + ", current heading: "
+					+ enemyTanks[tankNumber].heading + ", Behavior: "
+					+ enemyTanks[tankNumber].behavior);
+			console.log("Tank Velocity: " + enemyTanks[tankNumber].velocity
+					+ "  X , Y : " + enemyTanks[tankNumber].x + " , "
+					+ enemyTanks[tankNumber].y);
+			console.log("cvX , cvY : " + enemyTanks[tankNumber].cvX() + " , "
+					+ enemyTanks[tankNumber].cvY());
 			//console.log(tankNumber+" calling tankMethod with argument '999' "+enemyTanks[tankNumber].tankMethod('999'));
 
-			// reset our three collision flags to all false
-			var wallCollision = false;
-			var playerCollision = false;
-			var friendlyCollision = false;
-			
-			// reset our wall flags to false
-			var collideTop = false;
-			var collideBottom = false;
-			var collideLeft = false;
-			var collideRight = false;
-			
 			// determine if forward progress will hit an object
-			// start with the walls
 			// compute our new hypothetical X,Y if we continue in this direction at our current speed
-			// enemyTanks[tankNumber].velocity = 20;
 
-			// using the current velocity as a range determination does not work when we reduce the speed to zero,
-			// that effectively blinds the tank to the current wall - and allows it to proceed
-			// instead, we will attempt to use a fixed range of 60.
 			var hypoX = enemyTanks[tankNumber].x + Math.cos(enemyTanks[tankNumber].heading * TO_RADIANS);
-			var hypoY = enemyTanks[tankNumber].y + Math.sin(enemyTanks[tankNumber].heading * TO_RADIANS);
+			var hypoY = enemyTanks[tankNumber].y + Math.sin(enemyTanks[tankNumber].heading  * TO_RADIANS);
 			// round down
 			hypoX = Math.floor(hypoX);
 			hypoY = Math.floor(hypoY);
-			
-			console.log("Hypothetical X,Y: "+hypoX+" , "+hypoY);
-			//console.log("Actual X,Y: "+enemyTanks[tankNumber].x+" , "+enemyTanks[tankNumber].y);			
-			
-			console.log("Checking to see if hypoX,hypoY is occupied");
-			try {
-				if (world[hypoX][hypoY] != 0) {
-					console.log("Can't proceed forward, tile is occupied by: "+world[hypoX][hypoY]);
-					// randomize anotherl heading
-					enemyTanks[tankNumber].heading = (Math.floor(Math.random() * 360) ) ;
 
-				} else {
-					console.log("Proceeding forward");
-					// claim the spot
-					world[hypoX][hypoY] = 1;
-					// release our current spot
-					world[enemyTanks[tankNumber].x][enemyTanks[tankNumber].y] = 0;
-					// update our current co-ordinates
-					enemyTanks[tankNumber].x = hypoX;
-					enemyTanks[tankNumber].y = hypoY;
+			console.log("Current X,Y  - Hypo X,Y: " + enemyTanks[tankNumber].x
+					+ " , " + enemyTanks[tankNumber].y + " - " + hypoX + " , "
+					+ hypoY);
+
+			console.log("Checking to see if hypoX,hypoY is occupied");
+			var canMove = false;
+			if (world[hypoX][hypoY] != 0) {
+				console.log("Can't proceed forward, tile is occupied by: " + world[hypoX][hypoY]);
+				// determine which directions are available
+				var savedX = [];
+				var savedY = [];
+				var savedDir = [];
+				for (i = 0; i < 360; i+=22.5) {
+					hypoX = enemyTanks[tankNumber].x + Math.cos(i * TO_RADIANS);
+					hypoY = enemyTanks[tankNumber].y + Math.sin(i  * TO_RADIANS);
+					// round down
+					hypoX = Math.floor(hypoX);
+					hypoY = Math.floor(hypoY);
+					if (world[hypoX][hypoY] == 0) {
+						// this direction is a contender - save the X,Y pair
+						savedX.push(hypoX);
+						savedY.push(hypoY);
+						savedDir.push(i);
+					}
 				}
-			} catch (e) {
-				// TypeError?
-				if ( e instanceof TypeError) { 
-					console.log("Caught a Type Error - halting");
+				if (savedX.length == 0 ) {
+					console.log("Tank "+tankNumber+" is completely blocked at this time");
 				} else {
-					console.log("Caught some other kind of error - halting");
+					// randomly select one of our saved directions
+					var randomIndex = Math.floor(Math.random() * savedX.length);
+					enemyTanks[tankNumber].heading = savedDir[randomIndex];
+					hypoX = savedX[randomIndex];
+					hypoY = savedY[randomIndex];
+					canMove = true;
 				}
-				// stop animation
-				console.log("Attempting to stop animation");
-				clearInterval(animateInterval);  // stop the animation loop
-			}			
+			} else {
+				canMove = true;
+			}
+			
+			if (canMove == true) {
+				console.log("Proceeding forward to X,Y "+hypoX+" , "+hypoY);
+				// claim the spot
+				world[hypoX][hypoY] = 1;
+				// release our current spot
+				world[enemyTanks[tankNumber].x][enemyTanks[tankNumber].y] = 0;
+				// update our current co-ordinates
+				enemyTanks[tankNumber].x = hypoX;
+				enemyTanks[tankNumber].y = hypoY;
+			}
 
 			//console.log("gun width: "+enemyTankGun.width+", height: "+enemyTankGun.height);
 			// gun width: 72, height: 42
 
 			drawRotatedImage(enemyTanks[tankNumber].vehicleImage,
 					enemyTanks[tankNumber].cvX(), enemyTanks[tankNumber].cvY(),
-					enemyTanks[tankNumber].heading , ctx);
+					enemyTanks[tankNumber].heading, ctx);
 			// and the gun - always point it at the center of the map
 			// var angleDeg = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
 			var centerX = ctx.canvas.width / 2;
@@ -377,37 +371,38 @@ body {
 
 			//		drawRotatedImage(enemyTankGun, eTankX +gunXd, eTankY+gunYd, gunAngle, ctx);
 			ctx.save();
-			ctx.translate(enemyTanks[tankNumber].cvX(), enemyTanks[tankNumber].cvY());
+			ctx.translate(enemyTanks[tankNumber].cvX(), enemyTanks[tankNumber]
+					.cvY());
 			ctx.rotate(gunAngle * Math.PI / 180);
 			ctx.drawImage(enemyTankGun, -20, -22);
 			ctx.restore();
-			
 
 			// show our gunRange and scanRange
 			// scan range
-		    ctx.beginPath();
-		    ctx.arc(enemyTanks[tankNumber].cvX(), enemyTanks[tankNumber].cvY(), enemyTanks[tankNumber].scanRange, 0, 2 * Math.PI, false);
-		    ctx.lineWidth = 5;
-		    ctx.strokeStyle = 'green';
-		    ctx.stroke();
+			ctx.beginPath();
+			ctx.arc(enemyTanks[tankNumber].cvX(), enemyTanks[tankNumber].cvY(),
+					enemyTanks[tankNumber].scanRange, 0, 2 * Math.PI, false);
+			ctx.lineWidth = 5;
+			ctx.strokeStyle = 'green';
+			ctx.stroke();
 
-		    // gun range
-		    ctx.beginPath();
-		    ctx.arc(enemyTanks[tankNumber].cvX(), enemyTanks[tankNumber].cvY(), enemyTanks[tankNumber].gunRange, 0, 2 * Math.PI, false);
-		    ctx.lineWidth = 5;
-		    ctx.strokeStyle = 'red';
-		    ctx.stroke();
+			// gun range
+			ctx.beginPath();
+			ctx.arc(enemyTanks[tankNumber].cvX(), enemyTanks[tankNumber].cvY(),
+					enemyTanks[tankNumber].gunRange, 0, 2 * Math.PI, false);
+			ctx.lineWidth = 5;
+			ctx.strokeStyle = 'red';
+			ctx.stroke();
 		}
 		// Draw the target (Player) tank
-		console.log("Player Tank adjusted X: "+playerTank.cvX());
-		drawRotatedImage(playerTank.vehicleImage, playerTank.cvX(), playerTank.cvY(), playerTank.heading, ctx);
+		drawRotatedImage(playerTank.vehicleImage, playerTank.cvX(), playerTank
+				.cvY(), playerTank.heading, ctx);
 		// Draw the target (Player) tank turret
 		ctx.save();
 		ctx.translate(playerTank.cvX(), playerTank.cvY());
 		ctx.rotate(angle * Math.PI / 180);
 		ctx.drawImage(playerTankGun, -20, -22);
 		ctx.restore();
-		
 
 	}
 
@@ -435,24 +430,21 @@ body {
 	function randomNumber(min, max) {
 		return Math.floor(Math.random() * (max - min)) + min;
 	}
-	
-	function GetUrlValue(VarSearch){
-	    var SearchString = window.location.search.substring(1);
-	    var VariableArray = SearchString.split('&');
-	    for(var i = 0; i < VariableArray.length; i++){
-	        var KeyValuePair = VariableArray[i].split('=');
-	        if(KeyValuePair[0] == VarSearch){
-	            return KeyValuePair[1];
-	        }
-	    }
+
+	function GetUrlValue(VarSearch) {
+		var SearchString = window.location.search.substring(1);
+		var VariableArray = SearchString.split('&');
+		for (var i = 0; i < VariableArray.length; i++) {
+			var KeyValuePair = VariableArray[i].split('=');
+			if (KeyValuePair[0] == VarSearch) {
+				return KeyValuePair[1];
+			}
+		}
 	}
 
 	window.addEventListener('load', function(event) {
 		InitGame();
 	});
-	
-
-	
 </script>
 
 </head>
